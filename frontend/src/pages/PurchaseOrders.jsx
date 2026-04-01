@@ -27,7 +27,7 @@ export default function PurchaseOrders() {
 
   const fetchPOs = async () => {
     try {
-      const res = await axios.get("http://0.0.0.0:8000/purchase-orders");
+      const res = await axios.get("https://erp-project-sellbrite-robust.onrender.com/purchase-orders");
 
       if (Array.isArray(res.data)) {
         const sorted = res.data.sort(

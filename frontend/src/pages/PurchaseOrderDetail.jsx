@@ -22,7 +22,7 @@ export default function PurchaseOrderDetail() {
   const fetchPO = async () => {
   setLoading(true);
   try {
-    const res = await axios.get(`http://0.0.0.0:8000/purchase-orders/${id}`);
+    const res = await axios.get(`https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${id}`);
     setPo(res.data);
 
     const qtyMap = {};
@@ -58,7 +58,7 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
   setUpdatingItem(sku);
   try {
     await axios.put(
-      `http://0.0.0.0:8000/purchase-orders/${id}/items/${sku}`,
+      `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${id}/items/${sku}`,
       { quantity }
     );
 
@@ -83,7 +83,7 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
     setReceivingItem(sku);
     try {
       const res = await axios.post(
-        `http://0.0.0.0:8000/purchase-orders/${po.id}/items/${sku}/receive`,
+        `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/items/${sku}/receive`,
         { quantity: qty }
       );
 
@@ -102,11 +102,11 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
     try {
       if (po.status === "draft") {
         await axios.post(
-          `http://0.0.0.0:8000/purchase-orders/${po.id}/submit`
+          `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/submit`
         );
       } else if (po.status === "submitted") {
         await axios.post(
-          `http://0.0.0.0:8000/purchase-orders/${po.id}/revert`
+          `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/revert`
         );
       }
       fetchPO();
@@ -119,7 +119,7 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
   const deletePO = async () => {
     if (!window.confirm("Delete this PO?")) return;
     try {
-      await axios.delete(`http://0.0.0.0:8000/purchase-orders/${po.id}`);
+      await axios.delete(`https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}`);
     } catch (err) {
       console.error(err);
       alert("Failed to delete PO");
@@ -127,14 +127,14 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
   };
 
   const downloadPO = () => {
-    window.open(`http://0.0.0.0:8000/purchase-orders/${po.id}/download`);
+    window.open(`https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/download`);
   };
 
   const removeItem = async (sku) => {
     if (!window.confirm("Remove this item?")) return;
     try {
       await axios.delete(
-        `http://0.0.0.0:8000/purchase-orders/${po.id}/items/${sku}`
+        `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/items/${sku}`
       );
       fetchPO();
     } catch (err) {
@@ -148,7 +148,7 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
 
     try {
       const res = await axios.get(
-        "http://0.0.0.0:8000/products/search",
+        "https://erp-project-sellbrite-robust.onrender.com/products/search",
         { params: { q: search } }
       );
 
@@ -161,7 +161,7 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
   const addItem = async (product) => {
     try {
       await axios.post(
-        `http://0.0.0.0:8000/purchase-orders/${po.id}/items`,
+        `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/items`,
         {
           sku: product.sku,
           title: product.title,

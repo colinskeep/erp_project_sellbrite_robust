@@ -11,7 +11,7 @@ export default function Dashboard() {
   const [filter, setFilter] = useState("all");
 
   useEffect(() => {
-    axios.get("http://0.0.0.0:8000/replenishment")
+    axios.get("https://erp-project-sellbrite-robust.onrender.com/replenishment")
       .then((res) => {
         const cleaned = res.data.filter(i => i.sku && i.sku.trim() !== "");
         setData(cleaned);

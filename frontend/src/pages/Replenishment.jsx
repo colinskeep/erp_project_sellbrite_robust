@@ -14,7 +14,7 @@ export default function Replenishment() {
     setLoading(true);
 
     axios
-      .get("http://0.0.0.0:8000/replenishment", {
+      .get("https://erp-project-sellbrite-robust.onrender.com/replenishment", {
         params: vendor ? { vendor } : {},
       })
       .then((res) => {
@@ -65,7 +65,7 @@ export default function Replenishment() {
     });
 
     for (const supplier in grouped) {
-      await axios.post("http://0.0.0.0:8000/purchase-orders", {
+      await axios.post("https://erp-project-sellbrite-robust.onrender.com/purchase-orders", {
         supplier,
         items: grouped[supplier],
       });
