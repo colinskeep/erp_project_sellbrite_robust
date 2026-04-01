@@ -9,3 +9,4 @@ pydantic
 datetime
 numpy
 pandas
+apscheduler
