@@ -4,3 +4,10 @@ sqlalchemy
 pandas
 requests
 python-dotenv
+reportlab
+sqlite3
+pydantic
+datetime
+os
+numpy
+pandas
