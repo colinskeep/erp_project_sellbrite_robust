@@ -1,4 +1,3 @@
-import { useState } from "react";
 import Layout from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
 import Replenishment from "./pages/Replenishment";
@@ -11,7 +10,7 @@ function App() {
   return (
   <Layout>
     <Routes>
-      <Route path="/" element={<Dashboard />} />
+      <Route path="/" element={<PurchaseOrders />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/replenishment" element={<Replenishment />} />
       <Route path="/purchase-orders" element={<PurchaseOrders />} />
