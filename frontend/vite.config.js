@@ -8,6 +8,10 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: './index.html',
+        replenishment: './src/pages/Replenishment.jsx',
+        purchase_orders: './src/pages/PurchaseOrders.jsx',
+        // ...
+        // List all files you want in your build
       }
     }
   }
