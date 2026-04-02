@@ -8,72 +8,100 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import inch
-import sqlite3
 import os
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
-# ✅ IMPORTS
 from sellbrite import full_sync, analyze_inventory, sync_inventory_to_sellbrite
 
+# ================================
+# LOGGING
+# ================================
+
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+)
+
+logger = logging.getLogger(__name__)
 
 # ================================
 # DB
 # ================================
 
+DATABASE_URL = os.getenv("DATABASE_URL")
+
 def get_db():
-    conn = sqlite3.connect("erp.db", check_same_thread=False)
-    conn.row_factory = sqlite3.Row
     try:
+        logger.info("🔌 Opening DB connection (request)")
+        conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
         yield conn
+    except Exception:
+        logger.exception("❌ DB connection failed")
+        raise
     finally:
         conn.close()
+        logger.info("🔒 DB connection closed (request)")
 
 
 def init_db():
-    conn = sqlite3.connect("erp.db")
+    conn = psycopg2.connect(DATABASE_URL)
     cur = conn.cursor()
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS purchase_orders (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS purchase_orders (
+        id SERIAL PRIMARY KEY,
         supplier TEXT,
         status TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )""")
+    )
+    """)
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS purchase_order_items (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS purchase_order_items (
+        id SERIAL PRIMARY KEY,
         po_id INTEGER,
         sku TEXT,
         title TEXT,
         quantity INTEGER,
         cost REAL,
         received_quantity INTEGER DEFAULT 0
-    )""")
+    )
+    """)
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS inventory (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS inventory (
+        id SERIAL PRIMARY KEY,
         sku TEXT UNIQUE,
         inventory INTEGER
-    )""")
+    )
+    """)
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS products (
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS products (
         sku TEXT PRIMARY KEY,
         title TEXT,
         brand TEXT,
         last_modified_date TEXT,
         cost REAL
-    )""")
+    )
+    """)
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS sales (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS sales (
+        id SERIAL PRIMARY KEY,
         sku TEXT,
         title TEXT,
         quantity INTEGER,
         price REAL,
         revenue REAL,
         created_at TEXT
-    )""")
+    )
+    """)
 
     conn.commit()
     conn.close()
@@ -102,22 +130,36 @@ app.add_middleware(
 scheduler = BackgroundScheduler()
 
 def run_full_sync():
-    conn = sqlite3.connect("erp.db")
+    logger.info("🔄 Starting scheduled sync...")
+
+    if not DATABASE_URL:
+        logger.error("❌ DATABASE_URL is NOT set")
+        return
+
     try:
+        logger.info("🔌 Connecting to database...")
+        conn = psycopg2.connect(DATABASE_URL)
+        logger.info("✅ Database connection successful")
+
+        logger.info("📦 Running full_sync...")
         full_sync(conn)
-    finally:
+
+        logger.info("✅ Sync completed successfully")
+
         conn.close()
+        logger.info("🔒 Database connection closed")
+
+    except Exception as e:
+        logger.exception("❌ Sync failed with error")
 
 def start_scheduler():
-    print("Starting scheduler...")
     scheduler.add_job(run_full_sync, "interval", minutes=15)
     scheduler.start()
-
-    # Run once on startup
     run_full_sync()
 
 @app.on_event("startup")
 def startup_event():
+    logger.info("🚀 App starting...")
     start_scheduler()
 
 
@@ -126,13 +168,8 @@ def startup_event():
 # ================================
 
 @app.post("/sync")
-def manual_sync():
-    conn = sqlite3.connect("erp.db")
-    try:
-        full_sync(conn)
-    finally:
-        conn.close()
-
+def manual_sync(conn=Depends(get_db)):
+    full_sync(conn)
     return {"status": "sync complete"}
 
 
@@ -141,38 +178,45 @@ def manual_sync():
 # ================================
 
 def get_on_order_quantities(conn):
-    rows = conn.execute("""
+    cur = conn.cursor()
+    cur.execute("""
         SELECT sku, SUM(quantity - received_quantity) as qty_on_order
         FROM purchase_order_items poi
         JOIN purchase_orders po ON po.id = poi.po_id
         WHERE po.status != 'received'
         GROUP BY sku
-    """).fetchall()
+    """)
+    rows = cur.fetchall()
+    return {row["sku"]: row["qty_on_order"] or 0 for row in rows}
 
-    return {row["sku"]: row["qty_on_order"] for row in rows}
 
 # ================================
-# 🚀 FAST REPLENISHMENT (NO API CALLS)
+# REPLENISHMENT
 # ================================
 
 @app.get("/replenishment")
-def replenishment(vendor: str = Query(None), conn: sqlite3.Connection = Depends(get_db)):
-    # ✅ Pull from LOCAL DB instead of Sellbrite
-    sales = conn.execute("SELECT * FROM sales").fetchall()
-    products = conn.execute("SELECT * FROM products").fetchall()
-    inventory = conn.execute("SELECT * FROM inventory").fetchall()
+def replenishment(vendor: str = Query(None), conn=Depends(get_db)):
+    cur = conn.cursor()
+
+    cur.execute("SELECT * FROM sales")
+    sales = cur.fetchall()
+
+    cur.execute("SELECT * FROM products")
+    products = cur.fetchall()
+
+    cur.execute("SELECT * FROM inventory")
+    inventory = cur.fetchall()
 
     import pandas as pd
 
-    sales_df = pd.DataFrame([dict(r) for r in sales])
-    product_df = pd.DataFrame([dict(r) for r in products])
-    inventory_df = pd.DataFrame([dict(r) for r in inventory])
+    sales_df = pd.DataFrame(sales)
+    product_df = pd.DataFrame(products)
+    inventory_df = pd.DataFrame(inventory)
 
     if sales_df.empty:
         return []
 
     report_df = analyze_inventory(sales_df, product_df, inventory_df)
-
     items = report_df.fillna("").to_dict(orient="records")
 
     po_items = get_on_order_quantities(conn)
@@ -184,131 +228,113 @@ def replenishment(vendor: str = Query(None), conn: sqlite3.Connection = Depends(
 
         item["needed"] = max(
             0,
-            (item.get("reorder_qty", 0))
+            item.get("reorder_qty", 0)
             - (item.get("inventory", 0) - item.get("reserved", 0))
             - item["on_order"]
         )
 
         brand = item.get("brand")
-        item["vendor"] = brand.upper() if isinstance(brand, str) and brand else "UNKNOWN"
+        item["vendor"] = brand.upper() if brand else "UNKNOWN"
 
     if vendor:
         items = [i for i in items if i["vendor"] == vendor.upper()]
 
     return items
 
+
 # ================================
-# ⚡ FAST DATA ENDPOINTS
+# BASIC DATA ENDPOINTS
 # ================================
 
 @app.get("/sales")
 def get_sales(conn=Depends(get_db)):
-    rows = conn.execute("SELECT * FROM sales").fetchall()
-    return [dict(r) for r in rows]
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM sales")
+    return cur.fetchall()
 
 @app.get("/products")
 def get_products(conn=Depends(get_db)):
-    rows = conn.execute("SELECT * FROM products").fetchall()
-    return [dict(r) for r in rows]
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM products")
+    return cur.fetchall()
 
 @app.get("/inventory")
 def get_inventory(conn=Depends(get_db)):
-    rows = conn.execute("SELECT * FROM inventory").fetchall()
-    return [dict(r) for r in rows]
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM inventory")
+    return cur.fetchall()
+
 
 # ================================
 # PURCHASE ORDERS
 # ================================
 
 @app.get("/purchase-orders")
-def get_purchase_orders(conn: sqlite3.Connection = Depends(get_db)):
-    pos = conn.execute("SELECT * FROM purchase_orders").fetchall()
+def get_purchase_orders(conn=Depends(get_db)):
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM purchase_orders")
+    pos = cur.fetchall()
 
     results = []
 
     for po in pos:
-        po = dict(po)
-
-        total = conn.execute(
-            """
+        cur.execute("""
             SELECT SUM(quantity * cost) as total
             FROM purchase_order_items
-            WHERE po_id=?
-            """,
-            (po["id"],)
-        ).fetchone()
+            WHERE po_id=%s
+        """, (po["id"],))
+        total = cur.fetchone()["total"] or 0
 
-        po["total"] = total["total"] or 0
+        po["total"] = total
         results.append(po)
 
     return results
 
 
 @app.post("/purchase-orders")
-async def create_po(request: Request):
-    try:
-        data = await request.json()
+async def create_po(request: Request, conn=Depends(get_db)):
+    data = await request.json()
+    cur = conn.cursor()
 
-        # ✅ FIX: real connection (NOT get_db)
-        conn = sqlite3.connect("erp.db")
-        cur = conn.cursor()
+    cur.execute(
+        "INSERT INTO purchase_orders (supplier, status) VALUES (%s, %s) RETURNING id",
+        (data.get("supplier", "UNKNOWN"), "draft")
+    )
+    po_id = cur.fetchone()["id"]
 
-        cur.execute(
-            "INSERT INTO purchase_orders (supplier, status) VALUES (?, ?)",
-            (data.get("supplier", "UNKNOWN"), "draft")
-        )
+    for item in data.get("items", []):
+        cur.execute("""
+            INSERT INTO purchase_order_items (po_id, sku, title, quantity, cost)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (
+            po_id,
+            item.get("sku"),
+            item.get("title", ""),
+            item.get("quantity", 0),
+            item.get("cost", 0)
+        ))
 
-        po_id = cur.lastrowid
-
-        for item in data.get("items", []):
-            cur.execute(
-                """
-                INSERT INTO purchase_order_items (po_id, sku, title, quantity, cost)
-                VALUES (?, ?, ?, ?, ?)
-                """,
-                (
-                    po_id,
-                    item.get("sku"),
-                    item.get("title", ""),
-                    item.get("quantity", 0),
-                    item.get("cost", 0)
-                )
-            )
-
-        conn.commit()
-        conn.close()
-
-        return {"success": True, "po_id": po_id}
-
-    except Exception as e:
-        print("ERROR:", str(e))
-        return {"error": str(e)}
+    conn.commit()
+    return {"success": True, "po_id": po_id}
 
 
 @app.get("/purchase-orders/{po_id}")
-def get_po_detail(po_id: int, conn: sqlite3.Connection = Depends(get_db)):
+def get_po_detail(po_id: int, conn=Depends(get_db)):
+    cur = conn.cursor()
 
-    po = conn.execute(
-        "SELECT * FROM purchase_orders WHERE id=?",
-        (po_id,)
-    ).fetchone()
+    cur.execute("SELECT * FROM purchase_orders WHERE id=%s", (po_id,))
+    po = cur.fetchone()
 
     if not po:
         return {"error": "PO not found"}
 
-    items = conn.execute(
-        """
-        SELECT id, sku, title, quantity, cost, received_quantity
-        FROM purchase_order_items
-        WHERE po_id=?
-        """,
-        (po_id,)
-    ).fetchall()
+    cur.execute("""
+        SELECT * FROM purchase_order_items WHERE po_id=%s
+    """, (po_id,))
+    items = cur.fetchall()
 
-    return {
-        **dict(po),
-        "items": [dict(i) for i in items]
-    }
+    po["items"] = items
+    return po
 
 
 # ================================
@@ -318,11 +344,11 @@ def get_po_detail(po_id: int, conn: sqlite3.Connection = Depends(get_db)):
 class POItemUpdate(BaseModel):
     quantity: int
 
-
 @app.put("/purchase-orders/{po_id}/items/{sku}")
-def update_po_item(po_id: int, sku: str, data: POItemUpdate, conn: sqlite3.Connection = Depends(get_db)):
-    conn.execute(
-        "UPDATE purchase_order_items SET quantity=? WHERE po_id=? AND sku=?",
+def update_po_item(po_id: int, sku: str, data: POItemUpdate, conn=Depends(get_db)):
+    cur = conn.cursor()
+    cur.execute(
+        "UPDATE purchase_order_items SET quantity=%s WHERE po_id=%s AND sku=%s",
         (data.quantity, po_id, sku),
     )
     conn.commit()
@@ -330,9 +356,10 @@ def update_po_item(po_id: int, sku: str, data: POItemUpdate, conn: sqlite3.Conne
 
 
 @app.delete("/purchase-orders/{po_id}/items/{sku}")
-def delete_po_item(po_id: int, sku: str, conn: sqlite3.Connection = Depends(get_db)):
-    conn.execute(
-        "DELETE FROM purchase_order_items WHERE po_id=? AND sku=?",
+def delete_po_item(po_id: int, sku: str, conn=Depends(get_db)):
+    cur = conn.cursor()
+    cur.execute(
+        "DELETE FROM purchase_order_items WHERE po_id=%s AND sku=%s",
         (po_id, sku)
     )
     conn.commit()
@@ -340,41 +367,36 @@ def delete_po_item(po_id: int, sku: str, conn: sqlite3.Connection = Depends(get_
 
 
 @app.post("/purchase-orders/{po_id}/items")
-def add_po_item(po_id: int, item: dict, conn: sqlite3.Connection = Depends(get_db)):
-    conn.execute(
-        """
+def add_po_item(po_id: int, item: dict, conn=Depends(get_db)):
+    cur = conn.cursor()
+    cur.execute("""
         INSERT INTO purchase_order_items (po_id, sku, title, quantity, cost, received_quantity)
-        VALUES (?, ?, ?, ?, ?, 0)
-        """,
-        (
-            po_id,
-            item["sku"],
-            item.get("title", ""),
-            item.get("quantity", 1),
-            item.get("cost", 0),
-        )
-    )
+        VALUES (%s, %s, %s, %s, %s, 0)
+    """, (
+        po_id,
+        item["sku"],
+        item.get("title", ""),
+        item.get("quantity", 1),
+        item.get("cost", 0),
+    ))
     conn.commit()
     return {"success": True}
 
 
 # ================================
-# PRODUCTS
+# SEARCH
 # ================================
 
 @app.get("/products/search")
-def search_products(q: str, conn: sqlite3.Connection = Depends(get_db)):
-    rows = conn.execute(
-        """
+def search_products(q: str, conn=Depends(get_db)):
+    cur = conn.cursor()
+    cur.execute("""
         SELECT sku, title, cost
         FROM products
-        WHERE sku LIKE ? OR title LIKE ?
+        WHERE sku ILIKE %s OR title ILIKE %s
         LIMIT 20
-        """,
-        (f"%{q}%", f"%{q}%")
-    ).fetchall()
-
-    return [dict(r) for r in rows]
+    """, (f"%{q}%", f"%{q}%"))
+    return cur.fetchall()
 
 
 # ================================
@@ -382,79 +404,83 @@ def search_products(q: str, conn: sqlite3.Connection = Depends(get_db)):
 # ================================
 
 @app.delete("/purchase-orders/{po_id}")
-def delete_po(po_id: int, conn: sqlite3.Connection = Depends(get_db)):
-    conn.execute("DELETE FROM purchase_orders WHERE id=?", (po_id,))
+def delete_po(po_id: int, conn=Depends(get_db)):
+    cur = conn.cursor()
+    cur.execute("DELETE FROM purchase_orders WHERE id=%s", (po_id,))
     conn.commit()
     return {"success": True}
 
 
 @app.post("/purchase-orders/{po_id}/submit")
-def submit_po(po_id: int, conn: sqlite3.Connection = Depends(get_db)):
-    conn.execute("UPDATE purchase_orders SET status='submitted' WHERE id=?", (po_id,))
+def submit_po(po_id: int, conn=Depends(get_db)):
+    cur = conn.cursor()
+    cur.execute("UPDATE purchase_orders SET status='submitted' WHERE id=%s", (po_id,))
     conn.commit()
     return {"success": True}
 
 
 @app.post("/purchase-orders/{po_id}/revert")
-def revert_po(po_id: int, conn: sqlite3.Connection = Depends(get_db)):
-    conn.execute(
-        "UPDATE purchase_orders SET status='draft' WHERE id=?",
-        (po_id,)
-    )
+def revert_po(po_id: int, conn=Depends(get_db)):
+    cur = conn.cursor()
+    cur.execute("UPDATE purchase_orders SET status='draft' WHERE id=%s", (po_id,))
     conn.commit()
     return {"success": True}
 
 
 # ================================
-# RECEIVE PO (FIXED)
+# RECEIVE FULL PO
 # ================================
 
 @app.post("/purchase-orders/{po_id}/receive")
-def receive_po(po_id: int):
-    conn = sqlite3.connect("erp.db")
+def receive_po(po_id: int, conn=Depends(get_db)):
     cur = conn.cursor()
 
-    cur.execute("UPDATE purchase_orders SET status='received' WHERE id=?", (po_id,))
+    cur.execute("UPDATE purchase_orders SET status='received' WHERE id=%s", (po_id,))
 
-    cur.execute("SELECT sku, quantity FROM purchase_order_items WHERE po_id=?", (po_id,))
+    cur.execute("SELECT sku, quantity FROM purchase_order_items WHERE po_id=%s", (po_id,))
     items = cur.fetchall()
 
-    for sku, qty in items:
-        cur.execute("SELECT inventory FROM inventory WHERE sku=?", (sku,))
+    for item in items:
+        sku = item["sku"]
+        qty = item["quantity"]
+
+        cur.execute("SELECT * FROM inventory WHERE sku=%s", (sku,))
         row = cur.fetchone()
 
         if row:
             cur.execute(
-                "UPDATE inventory SET inventory = inventory + ? WHERE sku=?",
+                "UPDATE inventory SET inventory = inventory + %s WHERE sku=%s",
                 (qty, sku)
             )
         else:
             cur.execute(
-                "INSERT INTO inventory (sku, inventory) VALUES (?, ?)",
+                "INSERT INTO inventory (sku, inventory) VALUES (%s, %s)",
                 (sku, qty)
             )
 
     conn.commit()
-    conn.close()
-
     return {"success": True}
 
 @app.get("/purchase-orders/{po_id}/download")
 def download_po(po_id: int, conn=Depends(get_db)):
-    po_row = conn.execute(
-        "SELECT * FROM purchase_orders WHERE id=?",
+    
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT * FROM purchase_orders WHERE id=%s",
         (po_id,)
-    ).fetchone()
+    )
+    po_row = cur.fetchone()
 
     if not po_row:
         return {"detail": "Not Found"}
 
     po = dict(po_row)
 
-    item_rows = conn.execute(
-        "SELECT * FROM purchase_order_items WHERE po_id=?",
+    cur.execute(
+        "SELECT * FROM purchase_order_items WHERE po_id=%s",
         (po_id,)
-    ).fetchall()
+    )
+    item_rows = cur.fetchall()
 
     items = [dict(r) for r in item_rows]
 
@@ -620,16 +646,18 @@ class ReceiveItemRequest(BaseModel):
 @app.post("/purchase-orders/{po_id}/items/{sku}/receive")
 def receive_po_item(po_id: int, sku: str, payload: ReceiveItemRequest, conn=Depends(get_db)):
     quantity = payload.quantity
+    cur = conn.cursor()
 
-    item = conn.execute(
-        "SELECT * FROM purchase_order_items WHERE po_id=? AND sku=?",
+    # ✅ Get item
+    cur.execute(
+        "SELECT * FROM purchase_order_items WHERE po_id=%s AND sku=%s",
         (po_id, sku)
-    ).fetchone()
+    )
+    item = cur.fetchone()
 
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
 
-    item = dict(item)
     remaining = item["quantity"] - item["received_quantity"]
 
     if quantity <= 0:
@@ -639,72 +667,60 @@ def receive_po_item(po_id: int, sku: str, payload: ReceiveItemRequest, conn=Depe
         raise HTTPException(status_code=400, detail="Receiving more than remaining")
 
     # ✅ Update received quantity
-    conn.execute(
+    cur.execute(
         """
         UPDATE purchase_order_items
-        SET received_quantity = received_quantity + ?
-        WHERE po_id=? AND sku=?
+        SET received_quantity = received_quantity + %s
+        WHERE po_id=%s AND sku=%s
         """,
         (quantity, po_id, sku)
     )
 
-    # ✅ Update local inventory
-    inv = conn.execute(
-        "SELECT * FROM inventory WHERE sku=?",
+    # ✅ Update inventory
+    cur.execute(
+        "SELECT * FROM inventory WHERE sku=%s",
         (sku,)
-    ).fetchone()
+    )
+    inv = cur.fetchone()
 
     if inv:
-        conn.execute(
-            """
-            UPDATE inventory
-            SET inventory = inventory + ?
-            WHERE sku=?
-            """,
+        cur.execute(
+            "UPDATE inventory SET inventory = inventory + %s WHERE sku=%s",
             (quantity, sku)
         )
     else:
-        conn.execute(
-            """
-            INSERT INTO inventory (sku, inventory)
-            VALUES (?, ?)
-            """,
+        cur.execute(
+            "INSERT INTO inventory (sku, inventory) VALUES (%s, %s)",
             (sku, quantity)
         )
 
     conn.commit()
 
-    # 🚀 Push update to Sellbrite
+    # 🚀 Push to Sellbrite
     sync_inventory_to_sellbrite(conn, sku)
 
-    # 🔄 Auto-close PO if fully received
-    remaining_items = conn.execute(
-        """
+    # 🔄 Check if PO complete
+    cur.execute("""
         SELECT COUNT(*) as count
         FROM purchase_order_items
-        WHERE po_id=? AND quantity > received_quantity
-        """,
-        (po_id,)
-    ).fetchone()
+        WHERE po_id=%s AND quantity > received_quantity
+    """, (po_id,))
+    remaining_items = cur.fetchone()
 
     if remaining_items["count"] == 0:
-        conn.execute(
-            "UPDATE purchase_orders SET status='received' WHERE id=?",
+        cur.execute(
+            "UPDATE purchase_orders SET status='received' WHERE id=%s",
             (po_id,)
         )
         conn.commit()
 
-    # 🔄 Return updated PO and items for frontend
-    po = conn.execute(
-        "SELECT * FROM purchase_orders WHERE id=?",
-        (po_id,)
-    ).fetchone()
-    items = conn.execute(
-        "SELECT * FROM purchase_order_items WHERE po_id=?",
-        (po_id,)
-    ).fetchall()
+    # 🔄 Return updated PO
+    cur.execute("SELECT * FROM purchase_orders WHERE id=%s", (po_id,))
+    po = cur.fetchone()
 
-    po_dict = dict(po)
-    po_dict["items"] = [dict(i) for i in items]
+    cur.execute("SELECT * FROM purchase_order_items WHERE po_id=%s", (po_id,))
+    items = cur.fetchall()
 
-    return po_dict
+    po["items"] = items
+
+    return po
