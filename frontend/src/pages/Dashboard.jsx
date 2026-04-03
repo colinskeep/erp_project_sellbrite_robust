@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import Spinner from "../components/Spinner";
 const API_KEY = process.env.API_KEY;
-console.log("API_KEY:", API_KEY);
+const token = localStorage.getItem("token");
+
 
 export default function Dashboard() {
   const [data, setData] = useState([]);
@@ -12,7 +13,8 @@ export default function Dashboard() {
   const [filter, setFilter] = useState("all");
 
   useEffect(() => {
-    axios.get("https://erp-project-sellbrite-robust.onrender.com/replenishment", { headers: { "x-api-key": API_KEY } })
+    axios.get("https://erp-project-sellbrite-robust.onrender.com/replenishment", 
+      { headers: { "Authorization": `Bearer ${token}`, "x-api-key": API_KEY } })
       .then((res) => {
         const cleaned = res.data.filter(i => i.sku && i.sku.trim() !== "");
         setData(cleaned);

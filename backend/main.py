@@ -1,3 +1,5 @@
+import os
+import psycopg2
 from fastapi import FastAPI, Depends, HTTPException, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -8,17 +10,30 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import inch
-import os
-import psycopg2
 from psycopg2.extras import RealDictCursor
-
 from apscheduler.schedulers.background import BackgroundScheduler
-
 from sellbrite import full_sync, analyze_inventory, sync_inventory_to_sellbrite
+from jose import jwt, JWTError
 
 # ================================
 # AUTHENTICATION
 # ================================
+
+@app.post("/login")
+def login(data: LoginRequest):
+    conn = get_db()
+
+    user = conn.execute(
+        "SELECT * FROM users WHERE email = %s",
+        (data.email,)
+    ).fetchone()
+
+    if not user or not verify_password(data.password, user["password"]):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    token = create_access_token({"sub": user["email"]})
+
+    return {"access_token": token}
 
 def verify_api_key(request: Request):
     print("🔑 Verifying API key...")
@@ -26,6 +41,14 @@ def verify_api_key(request: Request):
     api_key = request.headers.get("x-api-key")
     if api_key != os.getenv("API_KEY"):
         raise HTTPException(status_code=401, detail="Unauthorized")
+
+def get_current_user(authorization: str = Header(...)):
+    try:
+        token = authorization.split(" ")[1]
+        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        return payload["sub"]
+    except:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 # ================================
 # LOGGING
@@ -214,7 +237,7 @@ def get_on_order_quantities(conn):
 # ================================
 
 @app.get("/replenishment", dependencies=[Depends(verify_api_key)])
-def replenishment(vendor: str = Query(None), conn=Depends(get_db)):
+def replenishment(vendor: str = Query(None), user=Depends(get_current_user), conn=Depends(get_db)):
     cur = conn.cursor()
 
     cur.execute("SELECT * FROM sales")
@@ -266,19 +289,19 @@ def replenishment(vendor: str = Query(None), conn=Depends(get_db)):
 # ================================
 
 @app.get("/sales", dependencies=[Depends(verify_api_key)])
-def get_sales(conn=Depends(get_db)):
+def get_sales(user=Depends(get_current_user), conn=Depends(get_db)):
     cur = conn.cursor()
     cur.execute("SELECT * FROM sales")
     return cur.fetchall()
 
 @app.get("/products", dependencies=[Depends(verify_api_key)])
-def get_products(conn=Depends(get_db)):
+def get_products(user=Depends(get_current_user), conn=Depends(get_db)):
     cur = conn.cursor()
     cur.execute("SELECT * FROM products")
     return cur.fetchall()
 
 @app.get("/inventory", dependencies=[Depends(verify_api_key)])
-def get_inventory(conn=Depends(get_db)):
+def get_inventory(user=Depends(get_current_user), conn=Depends(get_db)):
     cur = conn.cursor()
     cur.execute("SELECT * FROM inventory")
     return cur.fetchall()
@@ -289,7 +312,7 @@ def get_inventory(conn=Depends(get_db)):
 # ================================
 
 @app.get("/purchase-orders", dependencies=[Depends(verify_api_key)])
-def get_purchase_orders(conn=Depends(get_db)):
+def get_purchase_orders(user=Depends(get_current_user), conn=Depends(get_db)):
     cur = conn.cursor()
     cur.execute("SELECT * FROM purchase_orders")
     pos = cur.fetchall()
@@ -311,7 +334,7 @@ def get_purchase_orders(conn=Depends(get_db)):
 
 
 @app.post("/purchase-orders", dependencies=[Depends(verify_api_key)])
-async def create_po(request: Request, conn=Depends(get_db)):
+async def create_po(request: Request, user=Depends(get_current_user), conn=Depends(get_db)):
     data = await request.json()
     cur = conn.cursor()
 
@@ -338,7 +361,7 @@ async def create_po(request: Request, conn=Depends(get_db)):
 
 
 @app.get("/purchase-orders/{po_id}", dependencies=[Depends(verify_api_key)])
-def get_po_detail(po_id: int, conn=Depends(get_db)):
+def get_po_detail(po_id: int, user=Depends(get_current_user), conn=Depends(get_db)):
     cur = conn.cursor()
 
     cur.execute("SELECT * FROM purchase_orders WHERE id=%s", (po_id,))
@@ -364,7 +387,7 @@ class POItemUpdate(BaseModel):
     quantity: int
 
 @app.put("/purchase-orders/{po_id}/items/{sku}", dependencies=[Depends(verify_api_key)])
-def update_po_item(po_id: int, sku: str, data: POItemUpdate, conn=Depends(get_db)):
+def update_po_item(po_id: int, sku: str, data: POItemUpdate, user=Depends(get_current_user), conn=Depends(get_db)):
     cur = conn.cursor()
     cur.execute(
         "UPDATE purchase_order_items SET quantity=%s WHERE po_id=%s AND sku=%s",
@@ -375,7 +398,7 @@ def update_po_item(po_id: int, sku: str, data: POItemUpdate, conn=Depends(get_db
 
 
 @app.delete("/purchase-orders/{po_id}/items/{sku}", dependencies=[Depends(verify_api_key)])
-def delete_po_item(po_id: int, sku: str, conn=Depends(get_db)):
+def delete_po_item(po_id: int, sku: str, user=Depends(get_current_user), conn=Depends(get_db)):
     cur = conn.cursor()
     cur.execute(
         "DELETE FROM purchase_order_items WHERE po_id=%s AND sku=%s",
@@ -386,7 +409,7 @@ def delete_po_item(po_id: int, sku: str, conn=Depends(get_db)):
 
 
 @app.post("/purchase-orders/{po_id}/items", dependencies=[Depends(verify_api_key)])
-def add_po_item(po_id: int, item: dict, conn=Depends(get_db)):
+def add_po_item(po_id: int, item: dict, user=Depends(get_current_user), conn=Depends(get_db)):
     cur = conn.cursor()
     cur.execute("""
         INSERT INTO purchase_order_items (po_id, sku, title, quantity, cost, received_quantity)
@@ -407,7 +430,7 @@ def add_po_item(po_id: int, item: dict, conn=Depends(get_db)):
 # ================================
 
 @app.get("/products/search", dependencies=[Depends(verify_api_key)])
-def search_products(q: str, conn=Depends(get_db)):
+def search_products(q: str, user=Depends(get_current_user), conn=Depends(get_db)):
     cur = conn.cursor()
     cur.execute("""
         SELECT sku, title, cost
@@ -423,7 +446,7 @@ def search_products(q: str, conn=Depends(get_db)):
 # ================================
 
 @app.delete("/purchase-orders/{po_id}", dependencies=[Depends(verify_api_key)])
-def delete_po(po_id: int, conn=Depends(get_db)):
+def delete_po(po_id: int, user=Depends(get_current_user), conn=Depends(get_db)):
     cur = conn.cursor()
     cur.execute("DELETE FROM purchase_orders WHERE id=%s", (po_id,))
     conn.commit()
@@ -431,7 +454,7 @@ def delete_po(po_id: int, conn=Depends(get_db)):
 
 
 @app.post("/purchase-orders/{po_id}/submit", dependencies=[Depends(verify_api_key)])
-def submit_po(po_id: int, conn=Depends(get_db)):
+def submit_po(po_id: int, user=Depends(get_current_user), conn=Depends(get_db)):
     cur = conn.cursor()
     cur.execute("UPDATE purchase_orders SET status='submitted' WHERE id=%s", (po_id,))
     conn.commit()
@@ -439,7 +462,7 @@ def submit_po(po_id: int, conn=Depends(get_db)):
 
 
 @app.post("/purchase-orders/{po_id}/revert", dependencies=[Depends(verify_api_key)])
-def revert_po(po_id: int, conn=Depends(get_db)):
+def revert_po(po_id: int, user=Depends(get_current_user), conn=Depends(get_db)):
     cur = conn.cursor()
     cur.execute("UPDATE purchase_orders SET status='draft' WHERE id=%s", (po_id,))
     conn.commit()
@@ -451,7 +474,7 @@ def revert_po(po_id: int, conn=Depends(get_db)):
 # ================================
 
 @app.post("/purchase-orders/{po_id}/receive", dependencies=[Depends(verify_api_key)])
-def receive_po(po_id: int, conn=Depends(get_db)):
+def receive_po(po_id: int, user=Depends(get_current_user), conn=Depends(get_db)):
     cur = conn.cursor()
 
     cur.execute("UPDATE purchase_orders SET status='received' WHERE id=%s", (po_id,))
@@ -481,7 +504,7 @@ def receive_po(po_id: int, conn=Depends(get_db)):
     return {"success": True}
 
 @app.get("/purchase-orders/{po_id}/download")
-def download_po(po_id: int, conn=Depends(get_db)):
+def download_po(po_id: int, user=Depends(get_current_user), conn=Depends(get_db)):
     
     cur = conn.cursor()
     cur.execute(
@@ -663,7 +686,7 @@ class ReceiveItemRequest(BaseModel):
     quantity: int
 
 @app.post("/purchase-orders/{po_id}/items/{sku}/receive", dependencies=[Depends(verify_api_key)])
-def receive_po_item(po_id: int, sku: str, payload: ReceiveItemRequest, conn=Depends(get_db)):
+def receive_po_item(po_id: int, sku: str, payload: ReceiveItemRequest, user=Depends(get_current_user), conn=Depends(get_db)):
     quantity = payload.quantity
     cur = conn.cursor()
 

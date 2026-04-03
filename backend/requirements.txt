@@ -11,3 +11,5 @@ numpy
 pandas
 apscheduler
 psycopg2-binary
+python-jose
+passlib[bcrypt]

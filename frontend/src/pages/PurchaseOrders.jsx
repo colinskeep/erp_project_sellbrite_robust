@@ -3,6 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Spinner from "../components/Spinner";
 const API_KEY = process.env.API_KEY;
+const token = localStorage.getItem("token");
 
 export default function PurchaseOrders() {
   const [pos, setPos] = useState([]);

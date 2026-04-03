@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import Spinner from "../components/Spinner";
 const API_KEY = process.env.API_KEY;
+const token = localStorage.getItem("token");
 
 export default function PurchaseOrderDetail() {
   const { id } = useParams();
@@ -24,6 +25,7 @@ export default function PurchaseOrderDetail() {
   setLoading(true);
   try {
     const res = await axios.get(`https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${id}`, { headers: {
+        "Authorization": `Bearer ${token}`,  
         "x-api-key": API_KEY
       }
     });
@@ -64,6 +66,7 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
     await axios.put(
       `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${id}/items/${sku}`,
       { quantity } , { headers: {
+        "Authorization": `Bearer ${token}`,
         "x-api-key": API_KEY
       }
     });
@@ -91,6 +94,7 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
       const res = await axios.post(
         `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/items/${sku}/receive`,
           { quantity: qty } , { headers: {
+            "Authorization": `Bearer ${token}`,
             "x-api-key": API_KEY
         }
       });
@@ -111,12 +115,14 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
       if (po.status === "draft") {
         await axios.post(
           `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/submit`, { headers: {
-        "x-api-key": API_KEY
+            "Authorization": `Bearer ${token}`,
+            "x-api-key": API_KEY
       }
       })
       } else if (po.status === "submitted") {
         await axios.post(
           `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/revert`, { headers: {
+            "Authorization": `Bearer ${token}`,
             "x-api-key": API_KEY
           }
         });
@@ -132,6 +138,7 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
     if (!window.confirm("Delete this PO?")) return;
     try {
       await axios.delete(`https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}`, { headers: {
+        "Authorization": `Bearer ${token}`,
         "x-api-key": API_KEY
       }
     });
@@ -143,6 +150,7 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
 
   const downloadPO = () => {
     window.open(`https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/download`, { headers: {
+      "Authorization": `Bearer ${token}`,
       "x-api-key": API_KEY
     }});
   };
@@ -152,6 +160,7 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
     try {
       await axios.delete(
         `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/items/${sku}`, { headers: {
+          "Authorization": `Bearer ${token}`,
           "x-api-key": API_KEY
         }
       }
@@ -169,6 +178,7 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
     try {
       const res = await axios.get(
         "https://erp-project-sellbrite-robust.onrender.com/products/search", { headers: {
+          "Authorization": `Bearer ${token}`,
           "x-api-key": API_KEY
         }},
         { params: { q: search } }
@@ -191,6 +201,7 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
           cost: product.cost || 0,
         }
         , { headers: {
+          "Authorization": `Bearer ${token}`,
           "x-api-key": API_KEY
         }}
       );

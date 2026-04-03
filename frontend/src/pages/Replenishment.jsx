@@ -3,6 +3,7 @@ import axios from "axios";
 import Skeleton from "../components/Skeleton";
 import Spinner from "../components/Spinner";
 const API_KEY = process.env.API_KEY;
+const token = localStorage.getItem("token");
 
 export default function Replenishment() {
   const [data, setData] = useState([]);

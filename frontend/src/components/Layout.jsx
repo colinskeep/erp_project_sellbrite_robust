@@ -1,3 +1,6 @@
+import { useAuth } from "../context/AuthContext";
+const { logout } = useAuth();
+
 export default function Layout({ children }) {
   return (
     <div className="flex h-screen bg-bg text-gray-900">
@@ -25,6 +28,8 @@ export default function Layout({ children }) {
         >
           Purchase Orders
         </button>
+
+        <button onClick={logout}>Logout</button>
       </div>
 
       {/* Main content */}
