@@ -480,7 +480,7 @@ def receive_po(po_id: int, conn=Depends(get_db)):
     conn.commit()
     return {"success": True}
 
-@app.get("/purchase-orders/{po_id}/download", dependencies=[Depends(verify_api_key)])
+@app.get("/purchase-orders/{po_id}/download")
 def download_po(po_id: int, conn=Depends(get_db)):
     
     cur = conn.cursor()
