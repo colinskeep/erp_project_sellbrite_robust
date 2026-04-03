@@ -19,7 +19,7 @@ export default function Replenishment() {
       .get("https://erp-project-sellbrite-robust.onrender.com/replenishment", 
       
         {
-          headers: { "x-api-key": API_KEY },
+          headers: { "Authorization": `Bearer ${token}`, "x-api-key": API_KEY },
           params: vendor ? { vendor } : {},
         }
       )
@@ -75,6 +75,7 @@ export default function Replenishment() {
         supplier,
         items: grouped[supplier],
       }, { headers: {
+        "Authorization": `Bearer ${token}`,
         "x-api-key": API_KEY
       }});
     }

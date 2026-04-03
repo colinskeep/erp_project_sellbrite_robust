@@ -30,6 +30,7 @@ export default function PurchaseOrders() {
   const fetchPOs = async () => {
     try {
       const res = await axios.get("https://erp-project-sellbrite-robust.onrender.com/purchase-orders", { headers: {
+        "Authorization": `Bearer ${token}`,
         "x-api-key": API_KEY
       }});
 
