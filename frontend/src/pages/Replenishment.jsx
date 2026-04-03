@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import Skeleton from "../components/Skeleton";
 import Spinner from "../components/Spinner";
+const API_KEY = import.meta.env.API_KEY;
 
 export default function Replenishment() {
   const [data, setData] = useState([]);
@@ -16,7 +17,9 @@ export default function Replenishment() {
     axios
       .get("https://erp-project-sellbrite-robust.onrender.com/replenishment", {
         params: vendor ? { vendor } : {},
-      })
+      }, { 'headers': {
+        "x-api-key": API_KEY
+      }})
       .then((res) => {
         const cleaned = res.data.filter(
           (item) => item.sku && item.sku.trim() !== ""
@@ -68,7 +71,9 @@ export default function Replenishment() {
       await axios.post("https://erp-project-sellbrite-robust.onrender.com/purchase-orders", {
         supplier,
         items: grouped[supplier],
-      });
+      }, { 'headers': {
+        "x-api-key": API_KEY
+      }});
     }
 
     alert("Purchase Orders created");

@@ -11,7 +11,7 @@ export default function Dashboard() {
   const [filter, setFilter] = useState("all");
 
   useEffect(() => {
-    axios.get("https://erp-project-sellbrite-robust.onrender.com/replenishment", {headers: {
+    axios.get("https://erp-project-sellbrite-robust.onrender.com/replenishment", { 'headers': {
         "x-api-key": API_KEY
       }
     })

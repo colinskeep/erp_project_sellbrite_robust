@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Spinner from "../components/Spinner";
+const API_KEY = import.meta.env.API_KEY;
 
 export default function PurchaseOrders() {
   const [pos, setPos] = useState([]);
@@ -27,7 +28,9 @@ export default function PurchaseOrders() {
 
   const fetchPOs = async () => {
     try {
-      const res = await axios.get("https://erp-project-sellbrite-robust.onrender.com/purchase-orders");
+      const res = await axios.get("https://erp-project-sellbrite-robust.onrender.com/purchase-orders", { 'headers': {
+        "x-api-key": API_KEY
+      }});
 
       if (Array.isArray(res.data)) {
         const sorted = res.data.sort(

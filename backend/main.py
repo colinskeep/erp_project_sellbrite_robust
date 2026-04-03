@@ -21,6 +21,8 @@ from sellbrite import full_sync, analyze_inventory, sync_inventory_to_sellbrite
 # ================================
 
 def verify_api_key(request: Request):
+    print("🔑 Verifying API key...")
+    print("Headers:", request.headers)
     api_key = request.headers.get("x-api-key")
     if api_key != os.getenv("API_KEY"):
         raise HTTPException(status_code=401, detail="Unauthorized")

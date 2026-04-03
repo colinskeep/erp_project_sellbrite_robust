@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import Spinner from "../components/Spinner";
+const API_KEY = import.meta.env.API_KEY;
 
 export default function PurchaseOrderDetail() {
   const { id } = useParams();
@@ -22,7 +23,10 @@ export default function PurchaseOrderDetail() {
   const fetchPO = async () => {
   setLoading(true);
   try {
-    const res = await axios.get(`https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${id}`);
+    const res = await axios.get(`https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${id}`, { 'headers': {
+        "x-api-key": API_KEY
+      }
+    });
     setPo(res.data);
 
     const qtyMap = {};
@@ -59,8 +63,10 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
   try {
     await axios.put(
       `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${id}/items/${sku}`,
-      { quantity }
-    );
+      { quantity } , { 'headers': {
+        "x-api-key": API_KEY
+      }
+    });
 
     setPo((prev) => ({
       ...prev,
@@ -84,8 +90,10 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
     try {
       const res = await axios.post(
         `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/items/${sku}/receive`,
-        { quantity: qty }
-      );
+          { quantity: qty } , { 'headers': {
+            "x-api-key": API_KEY
+        }
+      });
 
       setReceiveInputs((prev) => ({ ...prev, [sku]: "" }));
       setPo(res.data);
@@ -102,12 +110,16 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
     try {
       if (po.status === "draft") {
         await axios.post(
-          `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/submit`
-        );
+          `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/submit`, { 'headers': {
+        "x-api-key": API_KEY
+      }
+      })
       } else if (po.status === "submitted") {
         await axios.post(
-          `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/revert`
-        );
+          `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/revert`, { 'headers': {
+            "x-api-key": API_KEY
+          }
+        });
       }
       fetchPO();
     } catch (err) {
@@ -119,7 +131,10 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
   const deletePO = async () => {
     if (!window.confirm("Delete this PO?")) return;
     try {
-      await axios.delete(`https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}`);
+      await axios.delete(`https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}`, { 'headers': {
+        "x-api-key": API_KEY
+      }
+    });
     } catch (err) {
       console.error(err);
       alert("Failed to delete PO");
@@ -127,14 +142,19 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
   };
 
   const downloadPO = () => {
-    window.open(`https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/download`);
+    window.open(`https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/download`, { 'headers': {
+      "x-api-key": API_KEY
+    }});
   };
 
   const removeItem = async (sku) => {
     if (!window.confirm("Remove this item?")) return;
     try {
       await axios.delete(
-        `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/items/${sku}`
+        `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/items/${sku}`, { 'headers': {
+          "x-api-key": API_KEY
+        }
+      }
       );
       fetchPO();
     } catch (err) {
@@ -148,7 +168,9 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
 
     try {
       const res = await axios.get(
-        "https://erp-project-sellbrite-robust.onrender.com/products/search",
+        "https://erp-project-sellbrite-robust.onrender.com/products/search", { 'headers': {
+          "x-api-key": API_KEY
+        }},
         { params: { q: search } }
       );
 
@@ -168,6 +190,9 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
           quantity: 1,
           cost: product.cost || 0,
         }
+        , { 'headers': {
+          "x-api-key": API_KEY
+        }}
       );
 
       setResults([]);
