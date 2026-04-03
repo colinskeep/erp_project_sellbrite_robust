@@ -19,21 +19,6 @@ from jose import jwt, JWTError
 # AUTHENTICATION
 # ================================
 
-@app.post("/login")
-def login(data: LoginRequest):
-    conn = get_db()
-
-    user = conn.execute(
-        "SELECT * FROM users WHERE email = %s",
-        (data.email,)
-    ).fetchone()
-
-    if not user or not verify_password(data.password, user["password"]):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-
-    token = create_access_token({"sub": user["email"]})
-
-    return {"access_token": token}
 
 def verify_api_key(request: Request):
     print("🔑 Verifying API key...")
@@ -230,6 +215,27 @@ def get_on_order_quantities(conn):
     """)
     rows = cur.fetchall()
     return {row["sku"]: row["qty_on_order"] or 0 for row in rows}
+
+
+# ================================
+# LOGIN
+# ================================
+
+@app.post("/login")
+def login(data: LoginRequest):
+    conn = get_db()
+
+    user = conn.execute(
+        "SELECT * FROM users WHERE email = %s",
+        (data.email,)
+    ).fetchone()
+
+    if not user or not verify_password(data.password, user["password"]):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    token = create_access_token({"sub": user["email"]})
+
+    return {"access_token": token}
 
 
 # ================================
