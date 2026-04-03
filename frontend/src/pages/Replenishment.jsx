@@ -15,11 +15,13 @@ export default function Replenishment() {
     setLoading(true);
 
     axios
-      .get("https://erp-project-sellbrite-robust.onrender.com/replenishment", {
-        params: vendor ? { vendor } : {},
-      }, { headers: {
-        "x-api-key": API_KEY
-      }})
+      .get("https://erp-project-sellbrite-robust.onrender.com/replenishment", 
+      
+        {
+          headers: { "x-api-key": API_KEY },
+          params: vendor ? { vendor } : {},
+        }
+      )
       .then((res) => {
         const cleaned = res.data.filter(
           (item) => item.sku && item.sku.trim() !== ""
