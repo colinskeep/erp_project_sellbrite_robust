@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import Skeleton from "../components/Skeleton";
 import Spinner from "../components/Spinner";
-const API_KEY = import.meta.env.API_KEY;
+const API_KEY = process.env.API_KEY;
 
 export default function Replenishment() {
   const [data, setData] = useState([]);

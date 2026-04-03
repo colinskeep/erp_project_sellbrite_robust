@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import Spinner from "../components/Spinner";
-const API_KEY = import.meta.env.API_KEY;
+const API_KEY = process.env.API_KEY;
 
 export default function PurchaseOrderDetail() {
   const { id } = useParams();
