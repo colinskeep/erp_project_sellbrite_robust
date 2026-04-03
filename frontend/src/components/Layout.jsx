@@ -1,7 +1,7 @@
 import { useAuth } from "../context/AuthContext";
-const { logout } = useAuth();
 
 export default function Layout({ children }) {
+  const { logout } = useAuth();
   return (
     <div className="flex h-screen bg-bg text-gray-900">
       {/* Sidebar */}
