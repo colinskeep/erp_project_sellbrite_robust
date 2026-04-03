@@ -23,7 +23,7 @@ export default function PurchaseOrderDetail() {
   const fetchPO = async () => {
   setLoading(true);
   try {
-    const res = await axios.get(`https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${id}`, { headers : {
+    const res = await axios.get(`https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${id}`, { headers: {
         "x-api-key": API_KEY
       }
     });
@@ -63,7 +63,7 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
   try {
     await axios.put(
       `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${id}/items/${sku}`,
-      { quantity } , { headers : {
+      { quantity } , { headers: {
         "x-api-key": API_KEY
       }
     });
@@ -90,7 +90,7 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
     try {
       const res = await axios.post(
         `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/items/${sku}/receive`,
-          { quantity: qty } , { headers : {
+          { quantity: qty } , { headers: {
             "x-api-key": API_KEY
         }
       });
@@ -110,13 +110,13 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
     try {
       if (po.status === "draft") {
         await axios.post(
-          `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/submit`, { headers : {
+          `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/submit`, { headers: {
         "x-api-key": API_KEY
       }
       })
       } else if (po.status === "submitted") {
         await axios.post(
-          `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/revert`, { headers : {
+          `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/revert`, { headers: {
             "x-api-key": API_KEY
           }
         });
@@ -131,7 +131,7 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
   const deletePO = async () => {
     if (!window.confirm("Delete this PO?")) return;
     try {
-      await axios.delete(`https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}`, { headers : {
+      await axios.delete(`https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}`, { headers: {
         "x-api-key": API_KEY
       }
     });
@@ -142,7 +142,7 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
   };
 
   const downloadPO = () => {
-    window.open(`https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/download`, { headers : {
+    window.open(`https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/download`, { headers: {
       "x-api-key": API_KEY
     }});
   };
@@ -151,7 +151,7 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
     if (!window.confirm("Remove this item?")) return;
     try {
       await axios.delete(
-        `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/items/${sku}`, { headers : {
+        `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/items/${sku}`, { headers: {
           "x-api-key": API_KEY
         }
       }
@@ -168,7 +168,7 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
 
     try {
       const res = await axios.get(
-        "https://erp-project-sellbrite-robust.onrender.com/products/search", { headers : {
+        "https://erp-project-sellbrite-robust.onrender.com/products/search", { headers: {
           "x-api-key": API_KEY
         }},
         { params: { q: search } }
@@ -190,7 +190,7 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
           quantity: 1,
           cost: product.cost || 0,
         }
-        , { headers : {
+        , { headers: {
           "x-api-key": API_KEY
         }}
       );
