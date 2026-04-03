@@ -114,13 +114,21 @@ def init_db():
 app = FastAPI()
 init_db()
 
+from fastapi.middleware.cors import CORSMiddleware
+
+origins = [
+    "https://erp-project-sellbrite-robust.vercel.app",  # your frontend
+    "http://localhost:5173",  # local dev (Vite)
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,   # or ["*"] for testing
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 
 # ================================
