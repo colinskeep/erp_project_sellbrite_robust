@@ -17,7 +17,7 @@ export default function Replenishment() {
     axios
       .get("https://erp-project-sellbrite-robust.onrender.com/replenishment", {
         params: vendor ? { vendor } : {},
-      }, { 'headers': {
+      }, { headers : {
         "x-api-key": API_KEY
       }})
       .then((res) => {
@@ -71,7 +71,7 @@ export default function Replenishment() {
       await axios.post("https://erp-project-sellbrite-robust.onrender.com/purchase-orders", {
         supplier,
         items: grouped[supplier],
-      }, { 'headers': {
+      }, { headers : {
         "x-api-key": API_KEY
       }});
     }

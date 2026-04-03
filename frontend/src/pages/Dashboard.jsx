@@ -11,9 +11,7 @@ export default function Dashboard() {
   const [filter, setFilter] = useState("all");
 
   useEffect(() => {
-    axios.get("https://erp-project-sellbrite-robust.onrender.com/replenishment", { 'headers': {
-        "x-api-key": API_KEY
-      }
+    axios.get("https://erp-project-sellbrite-robust.onrender.com/replenishment", { headers : { "x-api-key": API_KEY}
     })
       .then((res) => {
         const cleaned = res.data.filter(i => i.sku && i.sku.trim() !== "");
