@@ -229,10 +229,13 @@ def login(data: LoginRequest, conn=Depends(get_db)):
     email = data.email;
     password = data.password;
 
-    user = conn.execute(
+    cursor = conn.cursor();
+
+    cursor.execute(
         "SELECT * FROM users WHERE email = %s",
         (data.email,)
-    ).fetchone()
+    )
+    user = cursor.fetchone()
 
     if not user or not verify_password(data.password, user["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
