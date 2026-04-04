@@ -29,7 +29,8 @@ export default function Layout({ children }) {
           Purchase Orders
         </button>
 
-        <button onClick={logout}>Logout</button>
+        <button onClick={logout}
+        className="w-full text-left px-3 py-2 rounded hover:bg-white/10 transition">Logout</button>
       </div>
 
       {/* Main content */}
