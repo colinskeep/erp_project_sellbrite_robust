@@ -65,112 +65,137 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* HEADER */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Supply Chain Dashboard</h1>
-
-        <div className="flex gap-3">
-          <input
-            placeholder="Search SKU or product..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-64 px-3 py-2 border rounded-lg"
-          />
-
-          <select
-            onChange={(e) => setFilter(e.target.value)}
-            className="w-40 px-3 py-2 border rounded-lg"
-          >
-            <option value="all">All Items</option>
-            <option value="low">Low Stock</option>
-          </select>
-
-          <select
-            onChange={(e) => setSort(e.target.value)}
-            className="w-40 px-3 py-2 border rounded-lg"
-          >
-            <option value="reorder">Reorder Qty</option>
-            <option value="revenue">Revenue</option>
-            <option value="days">Days Left</option>
-          </select>
-        </div>
-      </div>
-
-      {/* KPI GRID */}
-      <div className="bg-white/5 border border-white/10 rounded-xl p-6 shadow-lg">
-        <h2 className="text-lg font-semibold text-white mb-2">
-          Overview
-        </h2>
-        <p className="text-gray-400 text-sm">
-          Inventory performance summary
+  <div className="p-8 space-y-8">
+    {/* HEADER */}
+    <div className="flex justify-between items-center">
+      <div>
+        <h1 className="text-3xl font-semibold text-white tracking-tight">
+          Supply Chain Dashboard
+        </h1>
+        <p className="text-gray-400 text-sm mt-1">
+          Real-time inventory and replenishment insights
         </p>
       </div>
-      <div className="grid grid-cols-4 gap-6">
-        <KPI title="Revenue (90d)" value={formatUSD(totalRevenue)} />
-        <KPI title="Estimated Profit" value={formatUSD(profit)} />
-        <KPI title="Low Stock SKUs" value={lowStock} />
-        <KPI title="Total SKUs" value={data.length} />
+
+      <div className="flex gap-3">
+        <input
+          placeholder="Search SKU or product..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-64 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        />
+
+        <select
+          onChange={(e) => setFilter(e.target.value)}
+          className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-300"
+        >
+          <option value="all">All Items</option>
+          <option value="low">Low Stock</option>
+        </select>
+
+        <select
+          onChange={(e) => setSort(e.target.value)}
+          className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-300"
+        >
+          <option value="reorder">Reorder Qty</option>
+          <option value="revenue">Revenue</option>
+          <option value="days">Days Left</option>
+        </select>
+      </div>
+    </div>
+
+    {/* KPI GRID */}
+    <div className="grid grid-cols-4 gap-6">
+      <KPI title="Revenue (90d)" value={formatUSD(totalRevenue)} />
+      <KPI title="Estimated Profit" value={formatUSD(profit)} />
+      <KPI title="Low Stock SKUs" value={lowStock} highlight />
+      <KPI title="Total SKUs" value={data.length} />
+    </div>
+
+    {/* ALERT */}
+    {lowStock > 0 && (
+      <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl flex justify-between items-center">
+        <span>⚠️ {lowStock} SKUs need reordering soon</span>
+        <span className="text-xs text-red-300">Action recommended</span>
+      </div>
+    )}
+
+    {/* TABLE */}
+    <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+      <div className="px-6 py-4 border-b border-white/10 flex justify-between items-center">
+        <h2 className="text-white font-medium">Replenishment Queue</h2>
+        <span className="text-gray-400 text-sm">
+          Showing {Math.min(filtered.length, 50)} of {filtered.length}
+        </span>
       </div>
 
-      {/* ALERT */}
-      {lowStock > 0 && (
-        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl">
-          ⚠️ {lowStock} SKUs need reordering soon
-        </div>
-      )}
+      <table className="w-full text-sm text-gray-300">
+        <thead className="bg-white/5 text-xs uppercase text-gray-400">
+          <tr>
+            <th className="p-3 text-left">SKU</th>
+            <th className="p-3 text-left">Product</th>
+            <th className="p-3 text-center">Stock</th>
+            <th className="p-3 text-center">Daily</th>
+            <th className="p-3 text-center">Days Left</th>
+            <th className="p-3 text-center">Reorder</th>
+          </tr>
+        </thead>
 
-      {/* TABLE */}
-      <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-xs uppercase text-gray-500">
-            <tr>
-              <th className="p-3 text-left">SKU</th>
-              <th className="p-3 text-left">Product</th>
-              <th className="p-3 text-center">Stock</th>
-              <th className="p-3 text-center">Daily</th>
-              <th className="p-3 text-center">Days Left</th>
-              <th className="p-3 text-center">Reorder</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.slice(0, 50).map((item) => {
-              const days = item.days_of_stock || 0;
+        <tbody>
+          {filtered.slice(0, 50).map((item) => {
+            const days = item.days_of_stock || 0;
 
-              return (
-                <tr key={item.sku} className="border-t hover:bg-gray-50">
-                  <td className="p-3 font-medium">{item.sku}</td>
-                  <td className="p-3">{item.title}</td>
-                  <td className="p-3 text-center">{item.inventory}</td>
-                  <td className="p-3 text-center">
-                    {item.daily_sales?.toFixed(2)}
-                  </td>
-                  <td
-                    className={`p-3 text-center font-semibold ${
-                      days < 14 ? "text-red-600" : "text-gray-700"
-                    }`}
-                  >
-                    {Math.round(days)}
-                  </td>
-                  <td className="p-3 text-center text-indigo-600 font-bold">
-                    {Math.round(item.reorder_qty)}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+            return (
+              <tr
+                key={item.sku}
+                className="border-t border-white/5 hover:bg-white/5 transition"
+              >
+                <td className="p-3 font-medium text-white">{item.sku}</td>
+
+                <td className="p-3 text-gray-300">{item.title}</td>
+
+                <td className="p-3 text-center">
+                  {item.inventory}
+                </td>
+
+                <td className="p-3 text-center">
+                  {item.daily_sales?.toFixed(2)}
+                </td>
+
+                <td
+                  className={`p-3 text-center font-semibold ${
+                    days < 14 ? "text-red-400" : "text-gray-300"
+                  }`}
+                >
+                  {Math.round(days)}
+                </td>
+
+                <td className="p-3 text-center text-indigo-400 font-semibold">
+                  {Math.round(item.reorder_qty)}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  </div>
+);
+
+/* KPI COMPONENT */
+function KPI({ title, value, highlight }) {
+  return (
+    <div className="bg-white/5 border border-white/10 rounded-xl p-5 hover:bg-white/10 transition">
+      <div className="text-sm text-gray-400">{title}</div>
+
+      <div
+        className={`text-2xl font-semibold mt-1 ${
+          highlight ? "text-red-400" : "text-white"
+        }`}
+      >
+        {value}
       </div>
     </div>
   );
 }
-
-/* KPI COMPONENT */
-function KPI({ title, value }) {
-  return (
-    <div className="bg-white p-5 rounded-2xl border shadow-sm">
-      <div className="text-sm text-gray-500">{title}</div>
-      <div className="text-2xl font-bold">{value}</div>
-    </div>
-  );
 }
