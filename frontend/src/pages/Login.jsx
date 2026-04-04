@@ -22,7 +22,7 @@ export default function Login() {
         },
         body: JSON.stringify({ email, password }),
       });
-      console.log(process.env.API_KEY, process.env.API_URL)
+      console.log(email, password)
       if (!res.ok) throw new Error("Login failed");
 
       const data = await res.json();
