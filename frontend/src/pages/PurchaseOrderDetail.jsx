@@ -111,28 +111,34 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
 
   // ✅ Toggle submit / revert draft
   const toggleSubmit = async () => {
-    try {
-      if (po.status === "draft") {
-        await axios.post(
-          `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/submit`, { headers: {
-            "Authorization": `Bearer ${token}`,
-            "x-api-key": API_KEY
-      }
-      })
-      } else if (po.status === "submitted") {
-        await axios.post(
-          `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/revert`, { headers: {
-            "Authorization": `Bearer ${token}`,
-            "x-api-key": API_KEY
-          }
-        });
-      }
-      fetchPO();
-    } catch (err) {
-      console.error(err);
-      alert("Failed to update PO status");
+  try {
+    const config = {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "x-api-key": API_KEY,
+      },
+    };
+
+    if (po.status === "draft") {
+      await axios.post(
+        `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/submit`,
+        {},
+        config
+      );
+    } else if (po.status === "submitted") {
+      await axios.post(
+        `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/revert`,
+        {},
+        config
+      );
     }
-  };
+
+    fetchPO();
+  } catch (err) {
+    console.error(err);
+    alert("Failed to update PO status");
+  }
+};
 
   const deletePO = async () => {
     if (!window.confirm("Delete this PO?")) return;
@@ -173,15 +179,18 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
   };
 
   const searchProducts = async () => {
-    if (!search) return;
+  if (!search) return;
 
-    try {
-      const res = await axios.get(
-        "https://erp-project-sellbrite-robust.onrender.com/products/search", { headers: {
-          "Authorization": `Bearer ${token}`,
-          "x-api-key": API_KEY
-        }},
-        { params: { q: search } }
+  try {
+    const res = await axios.get(
+      "https://erp-project-sellbrite-robust.onrender.com/products/search",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "x-api-key": API_KEY,
+          },
+          params: { q: search },
+        }
       );
 
       setResults(res.data);
@@ -199,11 +208,13 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
           title: product.title,
           quantity: 1,
           cost: product.cost || 0,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "x-api-key": API_KEY,
+          },
         }
-        , { headers: {
-          "Authorization": `Bearer ${token}`,
-          "x-api-key": API_KEY
-        }}
       );
 
       setResults([]);

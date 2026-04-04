@@ -252,7 +252,7 @@ def login(data: LoginRequest, conn=Depends(get_db)):
 # ================================
 
 @app.get("/replenishment", dependencies=[Depends(verify_api_key)])
-def replenishment(vendor: str = Query(None), conn=Depends(get_db)):
+def replenishment(vendor: str = Query(None), user=Depends(get_current_user), conn=Depends(get_db)):
     cur = conn.cursor()
 
     cur.execute("SELECT * FROM sales")
@@ -519,7 +519,7 @@ def receive_po(po_id: int, user=Depends(get_current_user), conn=Depends(get_db))
     return {"success": True}
 
 @app.get("/purchase-orders/{po_id}/download")
-def download_po(po_id: int, user=Depends(get_current_user), conn=Depends(get_db)):
+def download_po(po_id: int, conn=Depends(get_db)):
     
     cur = conn.cursor()
     cur.execute(
