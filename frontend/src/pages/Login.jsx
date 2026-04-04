@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 
-const API_URL = process.env.API_URL;
-
 export default function Login() {
   const { login } = useAuth();
 
@@ -14,7 +12,7 @@ export default function Login() {
     e.preventDefault();
 
     try {
-      const res = await fetch(`https://erp-project-sellbrite-robust.onrender.com/login`, {
+      const res = await fetch(`${process.env.API_URL}/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -22,7 +20,7 @@ export default function Login() {
         },
         body: JSON.stringify({ email, password }),
       });
-      console.log(process.env.API_KEY, API_URL)
+      console.log(process.env.API_KEY, process.env.API_URL)
       if (!res.ok) throw new Error("Login failed");
 
       const data = await res.json();
