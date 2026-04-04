@@ -14,7 +14,7 @@ from psycopg2.extras import RealDictCursor
 from apscheduler.schedulers.background import BackgroundScheduler
 from sellbrite import full_sync, analyze_inventory, sync_inventory_to_sellbrite
 from jose import jwt, JWTError
-from auth import verify_password, hash_password, create_access_token
+from auth import verify_password, hash_password, create_access_token, SECRET_KEY
 
 # ================================
 # AUTHENTICATION
