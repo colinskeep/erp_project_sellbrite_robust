@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import Spinner from "../components/Spinner";
+
 const API_KEY = process.env.API_KEY;
 const token = localStorage.getItem("token");
 
@@ -22,132 +23,145 @@ export default function PurchaseOrderDetail() {
   }, [id]);
 
   const fetchPO = async () => {
-  setLoading(true);
-  try {
-    const res = await axios.get(`https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${id}`, { headers: {
-        "Authorization": `Bearer ${token}`,  
-        "x-api-key": API_KEY
-      }
-    });
-    setPo(res.data);
+    setLoading(true);
+    try {
+      const res = await axios.get(
+        `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "x-api-key": API_KEY,
+          },
+        }
+      );
 
-    const qtyMap = {};
-    res.data.items.forEach((item) => {
-      qtyMap[item.sku] = item.quantity;
-    });
-    setQuantityInputs(qtyMap);
+      setPo(res.data);
 
-    const receiveMap = {};
-    res.data.items.forEach((item) => {
-      const remaining =
-        (Number(item.quantity) || 0) -
-        (Number(item.received_quantity) || 0);
+      const qtyMap = {};
+      const receiveMap = {};
 
-      receiveMap[item.sku] = remaining > 0 ? remaining : "";
-    });
+      res.data.items.forEach((item) => {
+        qtyMap[item.sku] = item.quantity;
 
-    setReceiveInputs(receiveMap);
+        const remaining =
+          (Number(item.quantity) || 0) -
+          (Number(item.received_quantity) || 0);
 
-  } catch (err) {
-    console.error(err);
-    alert("Failed to fetch purchase order");
-  } finally {
-    setLoading(false);
-  }
-};
+        receiveMap[item.sku] = remaining > 0 ? remaining : "";
+      });
 
-const handleQuantitySave = async (sku, valueOverride = null) => {
-  const quantity = Number(
-    valueOverride !== null ? valueOverride : quantityInputs[sku]
-  ) || 0;
+      setQuantityInputs(qtyMap);
+      setReceiveInputs(receiveMap);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to fetch purchase order");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  setUpdatingItem(sku);
-  try {
-    await axios.put(
-      `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${id}/items/${sku}`,
-      { quantity } , { headers: {
-        "Authorization": `Bearer ${token}`,
-        "x-api-key": API_KEY
-      }
-    });
+  const handleQuantitySave = async (sku, valueOverride = null) => {
+    const quantity =
+      Number(
+        valueOverride !== null ? valueOverride : quantityInputs[sku]
+      ) || 0;
 
-    setPo((prev) => ({
-      ...prev,
-      items: prev.items.map((item) =>
-        item.sku === sku ? { ...item, quantity } : item
-      ),
-    }));
-  } catch (err) {
-    console.error(err);
-    alert("Failed to update quantity");
-  } finally {
-    setUpdatingItem(null);
-  }
-};
+    setUpdatingItem(sku);
+    try {
+      await axios.put(
+        `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${id}/items/${sku}`,
+        { quantity },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "x-api-key": API_KEY,
+          },
+        }
+      );
+
+      setPo((prev) => ({
+        ...prev,
+        items: prev.items.map((item) =>
+          item.sku === sku ? { ...item, quantity } : item
+        ),
+      }));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update quantity");
+    } finally {
+      setUpdatingItem(null);
+    }
+  };
 
   const receiveItem = async (sku) => {
-  const qty = Number(receiveInputs[sku]) || 0;
-  if (qty <= 0) return;
+    const qty = Number(receiveInputs[sku]) || 0;
+    if (qty <= 0) return;
 
     setReceivingItem(sku);
     try {
       const res = await axios.post(
         `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/items/${sku}/receive`,
-          { quantity: qty } , { headers: {
-            "Authorization": `Bearer ${token}`,
-            "x-api-key": API_KEY
+        { quantity: qty },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "x-api-key": API_KEY,
+          },
         }
-      });
+      );
 
       setReceiveInputs((prev) => ({ ...prev, [sku]: "" }));
       setPo(res.data);
     } catch (err) {
-      console.error("Receive failed", err);
+      console.error(err);
       alert("Failed to receive item");
     } finally {
       setReceivingItem(null);
     }
   };
 
-  // ✅ Toggle submit / revert draft
   const toggleSubmit = async () => {
-  try {
-    const config = {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "x-api-key": API_KEY,
-      },
-    };
+    try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "x-api-key": API_KEY,
+        },
+      };
 
-    if (po.status === "draft") {
-      await axios.post(
-        `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/submit`,
-        {},
-        config
-      );
-    } else if (po.status === "submitted") {
-      await axios.post(
-        `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/revert`,
-        {},
-        config
-      );
+      if (po.status === "draft") {
+        await axios.post(
+          `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/submit`,
+          {},
+          config
+        );
+      } else if (po.status === "submitted") {
+        await axios.post(
+          `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/revert`,
+          {},
+          config
+        );
+      }
+
+      fetchPO();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update PO status");
     }
-
-    fetchPO();
-  } catch (err) {
-    console.error(err);
-    alert("Failed to update PO status");
-  }
-};
+  };
 
   const deletePO = async () => {
     if (!window.confirm("Delete this PO?")) return;
     try {
-      await axios.delete(`https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}`, { headers: {
-        "Authorization": `Bearer ${token}`,
-        "x-api-key": API_KEY
-      }
-    });
+      await axios.delete(
+        `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "x-api-key": API_KEY,
+          },
+        }
+      );
     } catch (err) {
       console.error(err);
       alert("Failed to delete PO");
@@ -155,21 +169,22 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
   };
 
   const downloadPO = () => {
-    window.open(`https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/download`, { headers: {
-      "Authorization": `Bearer ${token}`,
-      "x-api-key": API_KEY
-    }});
+    window.open(
+      `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/download`
+    );
   };
 
   const removeItem = async (sku) => {
     if (!window.confirm("Remove this item?")) return;
     try {
       await axios.delete(
-        `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/items/${sku}`, { headers: {
-          "Authorization": `Bearer ${token}`,
-          "x-api-key": API_KEY
+        `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/items/${sku}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "x-api-key": API_KEY,
+          },
         }
-      }
       );
       fetchPO();
     } catch (err) {
@@ -179,11 +194,11 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
   };
 
   const searchProducts = async () => {
-  if (!search) return;
+    if (!search) return;
 
-  try {
-    const res = await axios.get(
-      "https://erp-project-sellbrite-robust.onrender.com/products/search",
+    try {
+      const res = await axios.get(
+        "https://erp-project-sellbrite-robust.onrender.com/products/search",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -227,66 +242,67 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
   };
 
   if (loading) return <Spinner />;
-  if (!po) return <p>PO not found</p>;
+  if (!po) return <p className="text-gray-400">PO not found</p>;
 
   const totalCost = po.items.reduce((sum, item) => {
-    const qty = Number(item.quantity) || 0;
-    const cost = Number(item.cost) || 0;
-    return sum + qty * cost;
+    return (
+      sum +
+      (Number(item.quantity) || 0) * (Number(item.cost) || 0)
+    );
   }, 0);
 
-  // 🎨 Status badge styling
   const statusColors = {
-    draft: "bg-gray-200 text-gray-700",
-    submitted: "bg-blue-100 text-blue-700",
-    received: "bg-green-100 text-green-700",
+    draft: "bg-white/10 text-gray-300",
+    submitted: "bg-blue-500/20 text-blue-300",
+    received: "bg-green-500/20 text-green-300",
   };
 
   const isEditable = po.status === "draft";
 
   return (
-    <div className="p-6 space-y-6">
-      
-      {/* 🔷 HEADER CARD */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm flex justify-between items-start">
-        <div>
-          <h1 className="text-2xl font-semibold">
-            Purchase Order #{po.id}
-          </h1>
+    <div className="space-y-6">
 
-          <div className="mt-2 text-sm text-gray-500 space-y-1">
-            <div><strong>Vendor:</strong> {po.supplier || "—"}</div>
-            <div><strong>Date:</strong> {po.created_at || "—"}</div>
+      {/* 🔷 HEADER */}
+      <div className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-lg flex justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-white">
+            PO #{po.id}
+          </h1>
+          <div className="text-sm text-gray-400 mt-2 space-y-1">
+            <div>Vendor: {po.supplier || "—"}</div>
+            <div>
+              Date:{" "}
+              {new Date(po.created_at).toLocaleDateString()}
+            </div>
           </div>
         </div>
 
         <div className="flex flex-col items-end gap-3">
           <span
-            className={`px-3 py-1 rounded-full text-xs font-medium ${
-              statusColors[po.status] || "bg-gray-100"
-            }`}
+            className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[po.status]}`}
           >
             {po.status?.toUpperCase()}
           </span>
 
-          {/* 🔘 Action Buttons */}
           <div className="flex gap-2">
             {po.status !== "received" && (
               <button
                 onClick={toggleSubmit}
-                className={`px-4 py-2 text-white rounded-lg text-sm transition ${
+                className={`px-4 py-2 rounded-lg text-sm text-white transition ${
                   po.status === "draft"
-                    ? "bg-green-600 hover:bg-green-700"
+                    ? "bg-green-500 hover:bg-green-600"
                     : "bg-yellow-500 hover:bg-yellow-600"
                 }`}
               >
-                {po.status === "draft" ? "Submit PO" : "Revert to Draft"}
+                {po.status === "draft"
+                  ? "Submit"
+                  : "Revert"}
               </button>
             )}
 
             <button
               onClick={downloadPO}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition"
+              className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg text-sm"
             >
               PDF
             </button>
@@ -294,7 +310,7 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
             {isEditable && (
               <button
                 onClick={deletePO}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition"
+                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm"
               >
                 Delete
               </button>
@@ -302,165 +318,166 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
           </div>
         </div>
       </div>
-      
-      {/* 🔷 TABLE CARD */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        {/* ➕ ADD PRODUCT */}
-        {isEditable && (
-          <div className="bg-white border rounded-xl p-4 mb-4">
-            <h2 className="text-sm font-semibold mb-2">Add Product</h2>
 
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Search SKU or product..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="border px-3 py-2 rounded-lg text-sm w-64"
-              />
-
-              <button
-                onClick={searchProducts}
-                className="px-3 py-2 bg-gray-800 text-white rounded-lg text-sm"
-              >
-                Search
-              </button>
-            </div>
-
-            {results.length > 0 && (
-              <div className="mt-3 border rounded-lg">
-                {results.map((p) => (
-                  <div
-                    key={p.sku}
-                    className="flex justify-between items-center p-2 border-b text-sm"
-                  >
-                    <div>
-                      <div className="font-medium">{p.sku}</div>
-                      <div className="text-gray-500">{p.title}</div>
-                    </div>
-
-                    <button
-                      onClick={() => addItem(p)}
-                      className="px-2 py-1 bg-indigo-600 text-white rounded text-xs"
-                    >
-                      Add
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
+      {/* 🔷 ADD PRODUCT */}
+      {isEditable && (
+        <div className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-xl p-4 shadow-md">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Search SKU or product..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="bg-white/10 border border-white/10 text-gray-200 px-3 py-2 rounded-lg text-sm w-64"
+            />
+            <button
+              onClick={searchProducts}
+              className="px-4 py-2 bg-indigo-500 text-white rounded-lg text-sm"
+            >
+              Search
+            </button>
           </div>
-        )}
 
-        {/* ➖ ITEM TABLE */}
+          {results.length > 0 && (
+            <div className="mt-3 border border-white/10 rounded-lg overflow-hidden">
+              {results.map((p) => (
+                <div
+                  key={p.sku}
+                  className="flex justify-between items-center px-3 py-2 border-b border-white/5 text-sm hover:bg-white/5"
+                >
+                  <div>
+                    <div className="text-white font-medium">
+                      {p.sku}
+                    </div>
+                    <div className="text-gray-400 text-xs">
+                      {p.title}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => addItem(p)}
+                    className="px-2 py-1 bg-indigo-500 text-white rounded text-xs"
+                  >
+                    Add
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 🔷 TABLE */}
+      <div className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-2xl shadow-lg overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+          <thead className="text-xs uppercase text-gray-400 border-b border-white/10">
             <tr>
               <th className="p-3"></th>
               <th className="p-3 text-left">SKU</th>
               <th className="p-3 text-left">Title</th>
-              <th className="p-3">Ordered</th>
-              <th className="p-3">Received</th>
-              <th className="p-3">Remaining</th>
-              <th className="p-3">Unit Cost</th>
-              <th className="p-3">Line Total</th>
-              <th className="p-3">Receive</th>
+              <th className="p-3 text-center">Ordered</th>
+              <th className="p-3 text-center">Received</th>
+              <th className="p-3 text-center">Remaining</th>
+              <th className="p-3 text-right">Cost</th>
+              <th className="p-3 text-right">Total</th>
+              <th className="p-3 text-center">Receive</th>
             </tr>
           </thead>
 
           <tbody>
             {po.items.map((item) => {
               const qty = Number(item.quantity) || 0;
-              const received = Number(item.received_quantity) || 0;
+              const received =
+                Number(item.received_quantity) || 0;
               const remaining = qty - received;
               const cost = Number(item.cost) || 0;
 
               return (
-                <tr key={item.sku} className="border-t hover:bg-gray-50">
+                <tr
+                  key={item.sku}
+                  className="border-t border-white/5 hover:bg-white/5 transition"
+                >
                   <td className="p-3 text-center">
                     {isEditable && (
                       <button
                         onClick={() => removeItem(item.sku)}
-                        className="text-red-500 hover:text-red-700 text-xs"
+                        className="text-red-400 hover:text-red-300 text-xs"
                       >
-                        X
+                        ✕
                       </button>
                     )}
                   </td>
-                  <td className="p-3 font-medium">{item.sku}</td>
-                  <td className="p-3">{item.title}</td>
 
-                  <td className="p-3 text-center">
-                  {isEditable ? (
-                    <input
-                      type="number"
-                      value={quantityInputs[item.sku] ?? ""}
-                      min={0}
-                      disabled={updatingItem === item.sku}
-                      onChange={(e) => {
-                        const value = e.target.value;
-
-                        // update UI instantly
-                        setQuantityInputs((prev) => ({
-                          ...prev,
-                          [item.sku]: value,
-                        }));
-
-                        // clear existing timeout
-                        if (saveTimeouts[item.sku]) {
-                          clearTimeout(saveTimeouts[item.sku]);
-                        }
-
-                        // set new debounce save
-                        const timeout = setTimeout(() => {
-                          handleQuantitySave(item.sku, value);
-                        }, 500);
-
-                        setSaveTimeouts((prev) => ({
-                          ...prev,
-                          [item.sku]: timeout,
-                        }));
-                      }}
-                      onBlur={() => handleQuantitySave(item.sku)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.target.blur();
-                        }
-                      }}
-                      onFocus={(e) => e.target.select()}
-                      className="border rounded px-2 py-1 w-20 text-center"
-                    />
-                  ) : (
-                    <span className="px-2 py-1 w-20 text-center block">{item.quantity}</span>
-                  )}
+                  <td className="p-3 text-white font-medium">
+                    {item.sku}
                   </td>
 
-                  <td className="p-3 text-center">{received}</td>
+                  <td className="p-3 text-gray-300">
+                    {item.title}
+                  </td>
+
+                  <td className="p-3 text-center">
+                    {isEditable ? (
+                      <input
+                        type="number"
+                        value={quantityInputs[item.sku] ?? ""}
+                        className="bg-white/10 border border-white/10 rounded px-2 py-1 w-20 text-center text-white"
+                        onChange={(e) => {
+                          const value = e.target.value;
+
+                          setQuantityInputs((prev) => ({
+                            ...prev,
+                            [item.sku]: value,
+                          }));
+
+                          if (saveTimeouts[item.sku]) {
+                            clearTimeout(saveTimeouts[item.sku]);
+                          }
+
+                          const timeout = setTimeout(() => {
+                            handleQuantitySave(item.sku, value);
+                          }, 500);
+
+                          setSaveTimeouts((prev) => ({
+                            ...prev,
+                            [item.sku]: timeout,
+                          }));
+                        }}
+                      />
+                    ) : (
+                      qty
+                    )}
+                  </td>
+
+                  <td className="p-3 text-center text-gray-300">
+                    {received}
+                  </td>
 
                   <td className="p-3 text-center">
                     <span
                       className={
                         remaining === 0
-                          ? "text-green-600 font-medium"
-                          : "text-gray-700"
+                          ? "text-green-400"
+                          : "text-gray-300"
                       }
                     >
                       {remaining}
                     </span>
                   </td>
 
-                  <td className="p-3 text-right">${cost.toFixed(2)}</td>
-                  <td className="p-3 text-right font-medium">
+                  <td className="p-3 text-right text-gray-300">
+                    ${cost.toFixed(2)}
+                  </td>
+
+                  <td className="p-3 text-right text-white font-medium">
                     ${(qty * cost).toFixed(2)}
                   </td>
 
-                  <td className="p-3">
+                  <td className="p-3 text-center">
                     {remaining > 0 ? (
-                      <div className="flex gap-2 justify-center">
+                      <div className="flex justify-center gap-2">
                         <input
                           type="number"
-                          min="1"
-                          max={remaining}
                           value={receiveInputs[item.sku] ?? ""}
                           onChange={(e) =>
                             setReceiveInputs((prev) => ({
@@ -468,18 +485,17 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
                               [item.sku]: e.target.value,
                             }))
                           }
-                          disabled={receivingItem === item.sku}
-                          className="w-16 border rounded px-2 py-1 text-center"
+                          className="w-16 bg-white/10 border border-white/10 rounded px-2 py-1 text-center text-white"
                         />
                         <button
                           onClick={() => receiveItem(item.sku)}
-                          className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-xs"
+                          className="px-2 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-xs"
                         >
-                          Receive
+                          ✓
                         </button>
                       </div>
                     ) : (
-                      <span className="text-green-600 text-xs font-medium">
+                      <span className="text-green-400 text-xs">
                         Complete
                       </span>
                     )}
@@ -490,11 +506,11 @@ const handleQuantitySave = async (sku, valueOverride = null) => {
           </tbody>
 
           <tfoot>
-            <tr className="border-t bg-gray-50 font-semibold">
+            <tr className="border-t border-white/10 text-white font-semibold">
               <td colSpan="8" className="p-3 text-right">
-                Total:
+                Total
               </td>
-              <td className="p-3">
+              <td className="p-3 text-center">
                 ${totalCost.toFixed(2)}
               </td>
             </tr>
