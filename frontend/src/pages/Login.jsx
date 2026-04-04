@@ -14,15 +14,15 @@ export default function Login() {
     e.preventDefault();
 
     try {
-      const res = await fetch(`${API_URL}/login`, {
+      const res = await fetch(`https://erp-project-sellbrite-robust.onrender.com/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": import.meta.env.VITE_API_KEY
+          "x-api-key": process.env.API_KEY
         },
         body: JSON.stringify({ email, password }),
       });
-
+      console.log(process.env.API_KEY, API_URL)
       if (!res.ok) throw new Error("Login failed");
 
       const data = await res.json();
