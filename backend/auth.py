@@ -24,9 +24,9 @@ def hash_password(password: str):
 
 def verify_password(plain, hashed):
     print("VERIFYING:", plain, hashed)
+    print(pwd_context.verify(plain, hashed))
     try:
         plain = normalize_password(plain)
-        print("DOES PW MATCH?",pwd_context.verify(plain, hashed))
         return pwd_context.verify(plain, hashed)
     except ValueError:
         # 🚨 fallback safety (prevents crashes on edge cases)
