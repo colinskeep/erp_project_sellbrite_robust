@@ -74,6 +74,15 @@ def init_db():
     cur = conn.cursor()
 
     cur.execute("""
+    CREATE TABLE IF NOT EXISTSusers (
+        id SERIAL PRIMARY KEY,
+        email TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        role TEXT DEFAULT 'user'
+    )
+    """)
+
+    cur.execute("""
     CREATE TABLE IF NOT EXISTS purchase_orders (
         id SERIAL PRIMARY KEY,
         supplier TEXT,
