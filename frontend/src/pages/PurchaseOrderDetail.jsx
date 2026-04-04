@@ -265,261 +265,265 @@ return (
   <div className="space-y-6">
 
     {/* 🔷 HEADER */}
-    <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex justify-between">
-      <div>
-        <h1 className="text-2xl font-semibold text-gray-900">
-          PO #{po.id}
-        </h1>
-        <div className="text-sm text-gray-500 mt-2 space-y-1">
-          <div>Vendor: {po.supplier || "—"}</div>
-          <div>
-            Date: {new Date(po.created_at).toLocaleDateString()}
+    <div className="relative rounded-2xl p-[1px] bg-gradient-to-r from-indigo-200 via-purple-200 to-blue-200">
+      <div className="bg-white/90 backdrop-blur-xl rounded-2xl p-6 shadow-sm flex justify-between">
+        
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">
+            PO #{po.id}
+          </h1>
+          <div className="text-sm text-gray-500 mt-2 space-y-1">
+            <div>Vendor: {po.supplier || "—"}</div>
+            <div>
+              Date: {new Date(po.created_at).toLocaleDateString()}
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="flex flex-col items-end gap-3">
-        <span
-          className={`px-3 py-1 rounded-full text-xs font-medium ${
-            po.status === "draft"
-              ? "bg-gray-100 text-gray-600"
-              : po.status === "submitted"
-              ? "bg-blue-100 text-blue-600"
-              : "bg-green-100 text-green-600"
-          }`}
-        >
-          {po.status?.toUpperCase()}
-        </span>
-
-        <div className="flex gap-2">
-          {po.status !== "received" && (
-            <button
-              onClick={toggleSubmit}
-              className={`px-4 py-2 rounded-lg text-sm font-medium text-white transition ${
-                po.status === "draft"
-                  ? "bg-green-600 hover:bg-green-700"
-                  : "bg-yellow-500 hover:bg-yellow-600"
-              }`}
-            >
-              {po.status === "draft" ? "Submit" : "Revert"}
-            </button>
-          )}
-
-          <button
-            onClick={downloadPO}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium"
+        <div className="flex flex-col items-end gap-3">
+          <span
+            className={`px-3 py-1 rounded-full text-xs font-medium ${
+              po.status === "draft"
+                ? "bg-gray-100 text-gray-600"
+                : po.status === "submitted"
+                ? "bg-blue-100 text-blue-600"
+                : "bg-green-100 text-green-600"
+            }`}
           >
-            Download PDF
-          </button>
+            {po.status?.toUpperCase()}
+          </span>
 
-          {isEditable && (
+          <div className="flex gap-2">
+            {po.status !== "received" && (
+              <button
+                onClick={toggleSubmit}
+                className={`px-4 py-2 rounded-lg text-sm font-medium text-white shadow-sm ${
+                  po.status === "draft"
+                    ? "bg-green-600 hover:bg-green-700"
+                    : "bg-yellow-500 hover:bg-yellow-600"
+                }`}
+              >
+                {po.status === "draft" ? "Submit" : "Revert"}
+              </button>
+            )}
+
             <button
-              onClick={deletePO}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium"
+              onClick={downloadPO}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium shadow-sm"
             >
-              Delete
+              Download PDF
             </button>
-          )}
+
+            {isEditable && (
+              <button
+                onClick={deletePO}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium shadow-sm"
+              >
+                Delete
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
 
     {/* 🔷 ADD PRODUCT */}
     {isEditable && (
-      <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder="Search SKU or product..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="border border-gray-300 text-gray-800 px-3 py-2 rounded-lg text-sm w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-          <button
-            onClick={searchProducts}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700"
-          >
-            Search
-          </button>
-        </div>
-
-        {results.length > 0 && (
-          <div className="mt-3 border border-gray-200 rounded-lg overflow-hidden">
-            {results.map((p) => (
-              <div
-                key={p.sku}
-                className="flex justify-between items-center px-3 py-2 border-b text-sm hover:bg-gray-50"
-              >
-                <div>
-                  <div className="text-gray-900 font-medium">
-                    {p.sku}
-                  </div>
-                  <div className="text-gray-500 text-xs">
-                    {p.title}
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => addItem(p)}
-                  className="px-3 py-1 bg-indigo-600 text-white rounded text-xs hover:bg-indigo-700"
-                >
-                  Add
-                </button>
-              </div>
-            ))}
+      <div className="rounded-xl p-[1px] bg-gradient-to-r from-indigo-100 to-blue-100">
+        <div className="bg-white/90 backdrop-blur-xl rounded-xl p-4 shadow-sm">
+          
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Search SKU or product..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="border border-gray-300 text-gray-800 px-3 py-2 rounded-lg text-sm w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+            <button
+              onClick={searchProducts}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 shadow-sm"
+            >
+              Search
+            </button>
           </div>
-        )}
+
+          {results.length > 0 && (
+            <div className="mt-3 border border-gray-200 rounded-lg overflow-hidden">
+              {results.map((p) => (
+                <div
+                  key={p.sku}
+                  className="flex justify-between items-center px-3 py-2 border-b text-sm hover:bg-gray-50"
+                >
+                  <div>
+                    <div className="text-gray-900 font-medium">
+                      {p.sku}
+                    </div>
+                    <div className="text-gray-500 text-xs">
+                      {p.title}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => addItem(p)}
+                    className="px-3 py-1 bg-indigo-600 text-white rounded text-xs hover:bg-indigo-700 shadow-sm"
+                  >
+                    Add
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     )}
 
     {/* 🔷 TABLE */}
-    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-      <table className="w-full text-sm">
-        <thead className="text-xs uppercase text-gray-500 border-b bg-gray-50">
-          <tr>
-            <th className="p-3"></th>
-            <th className="p-3 text-left">SKU</th>
-            <th className="p-3 text-left">Title</th>
-            <th className="p-3 text-center">Ordered</th>
-            <th className="p-3 text-center">Received</th>
-            <th className="p-3 text-center">Remaining</th>
-            <th className="p-3 text-right">Cost</th>
-            <th className="p-3 text-right">Total</th>
-            <th className="p-3 text-center">Receive</th>
-          </tr>
-        </thead>
+    <div className="rounded-2xl p-[1px] bg-gradient-to-r from-gray-200 to-gray-100">
+      <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-sm overflow-hidden">
+        
+        <table className="w-full text-sm">
+          <thead className="text-xs uppercase text-gray-500 border-b bg-gray-50">
+            <tr>
+              <th className="p-3"></th>
+              <th className="p-3 text-left">SKU</th>
+              <th className="p-3 text-left">Title</th>
+              <th className="p-3 text-center">Ordered</th>
+              <th className="p-3 text-center">Received</th>
+              <th className="p-3 text-center">Remaining</th>
+              <th className="p-3 text-right">Cost</th>
+              <th className="p-3 text-right">Total</th>
+              <th className="p-3 text-center">Receive</th>
+            </tr>
+          </thead>
 
-        <tbody>
-          {po.items.map((item) => {
-            const qty = Number(item.quantity) || 0;
-            const received = Number(item.received_quantity) || 0;
-            const remaining = qty - received;
-            const cost = Number(item.cost) || 0;
+          <tbody>
+            {po.items.map((item) => {
+              const qty = Number(item.quantity) || 0;
+              const received = Number(item.received_quantity) || 0;
+              const remaining = qty - received;
+              const cost = Number(item.cost) || 0;
 
-            return (
-              <tr
-                key={item.sku}
-                className="border-t hover:bg-gray-50 transition"
-              >
-                <td className="p-3 text-center">
-                  {isEditable && (
-                    <button
-                      onClick={() => removeItem(item.sku)}
-                      className="text-red-500 hover:text-red-600 text-xs"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </td>
+              return (
+                <tr
+                  key={item.sku}
+                  className="border-t hover:bg-gray-50 transition"
+                >
+                  <td className="p-3 text-center">
+                    {isEditable && (
+                      <button
+                        onClick={() => removeItem(item.sku)}
+                        className="text-red-500 hover:text-red-600 text-xs"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </td>
 
-                <td className="p-3 text-gray-900 font-medium">
-                  {item.sku}
-                </td>
+                  <td className="p-3 text-gray-900 font-medium">
+                    {item.sku}
+                  </td>
 
-                <td className="p-3 text-gray-600">
-                  {item.title}
-                </td>
+                  <td className="p-3 text-gray-600">
+                    {item.title}
+                  </td>
 
-                <td className="p-3 text-center">
-                  {isEditable ? (
-                    <input
-                      type="number"
-                      value={quantityInputs[item.sku] ?? ""}
-                      className="border border-gray-300 rounded px-2 py-1 w-20 text-center text-gray-900 focus:ring-2 focus:ring-indigo-500"
-                      onChange={(e) => {
-                        const value = e.target.value;
-
-                        setQuantityInputs((prev) => ({
-                          ...prev,
-                          [item.sku]: value,
-                        }));
-
-                        if (saveTimeouts[item.sku]) {
-                          clearTimeout(saveTimeouts[item.sku]);
-                        }
-
-                        const timeout = setTimeout(() => {
-                          handleQuantitySave(item.sku, value);
-                        }, 500);
-
-                        setSaveTimeouts((prev) => ({
-                          ...prev,
-                          [item.sku]: timeout,
-                        }));
-                      }}
-                    />
-                  ) : (
-                    qty
-                  )}
-                </td>
-
-                <td className="p-3 text-center text-gray-600">
-                  {received}
-                </td>
-
-                <td className="p-3 text-center">
-                  <span
-                    className={
-                      remaining === 0
-                        ? "text-green-600 font-medium"
-                        : "text-gray-600"
-                    }
-                  >
-                    {remaining}
-                  </span>
-                </td>
-
-                <td className="p-3 text-right text-gray-600">
-                  ${cost.toFixed(2)}
-                </td>
-
-                <td className="p-3 text-right text-gray-900 font-medium">
-                  ${(qty * cost).toFixed(2)}
-                </td>
-
-                <td className="p-3 text-center">
-                  {remaining > 0 ? (
-                    <div className="flex justify-center gap-2">
+                  <td className="p-3 text-center">
+                    {isEditable ? (
                       <input
                         type="number"
-                        value={receiveInputs[item.sku] ?? ""}
-                        onChange={(e) =>
-                          setReceiveInputs((prev) => ({
-                            ...prev,
-                            [item.sku]: e.target.value,
-                          }))
-                        }
-                        className="w-16 border border-gray-300 rounded px-2 py-1 text-center text-gray-900 focus:ring-2 focus:ring-green-500"
-                      />
-                      <button
-                        onClick={() => receiveItem(item.sku)}
-                        className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs"
-                      >
-                        ✓
-                      </button>
-                    </div>
-                  ) : (
-                    <span className="text-green-600 text-xs font-medium">
-                      Complete
-                    </span>
-                  )}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
+                        value={quantityInputs[item.sku] ?? ""}
+                        className="border border-gray-300 rounded px-2 py-1 w-20 text-center text-gray-900 focus:ring-2 focus:ring-indigo-500"
+                        onChange={(e) => {
+                          const value = e.target.value;
 
-        <tfoot>
-          <tr className="border-t bg-gray-50 text-gray-900 font-semibold">
-            <td colSpan="8" className="p-3 text-right">
-              Total
-            </td>
-            <td className="p-3 text-center">
-              ${totalCost.toFixed(2)}
-            </td>
-          </tr>
-        </tfoot>
-      </table>
+                          setQuantityInputs((prev) => ({
+                            ...prev,
+                            [item.sku]: value,
+                          }));
+
+                          if (saveTimeouts[item.sku]) {
+                            clearTimeout(saveTimeouts[item.sku]);
+                          }
+
+                          const timeout = setTimeout(() => {
+                            handleQuantitySave(item.sku, value);
+                          }, 500);
+
+                          setSaveTimeouts((prev) => ({
+                            ...prev,
+                            [item.sku]: timeout,
+                          }));
+                        }}
+                      />
+                    ) : (
+                      qty
+                    )}
+                  </td>
+
+                  <td className="p-3 text-center text-gray-600">
+                    {received}
+                  </td>
+
+                  <td className="p-3 text-center">
+                    <span className={remaining === 0 ? "text-green-600 font-medium" : "text-gray-600"}>
+                      {remaining}
+                    </span>
+                  </td>
+
+                  <td className="p-3 text-right text-gray-600">
+                    ${cost.toFixed(2)}
+                  </td>
+
+                  <td className="p-3 text-right text-gray-900 font-medium">
+                    ${(qty * cost).toFixed(2)}
+                  </td>
+
+                  <td className="p-3 text-center">
+                    {remaining > 0 ? (
+                      <div className="flex justify-center gap-2">
+                        <input
+                          type="number"
+                          value={receiveInputs[item.sku] ?? ""}
+                          onChange={(e) =>
+                            setReceiveInputs((prev) => ({
+                              ...prev,
+                              [item.sku]: e.target.value,
+                            }))
+                          }
+                          className="w-16 border border-gray-300 rounded px-2 py-1 text-center text-gray-900 focus:ring-2 focus:ring-green-500"
+                        />
+                        <button
+                          onClick={() => receiveItem(item.sku)}
+                          className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs shadow-sm"
+                        >
+                          ✓
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-green-600 text-xs font-medium">
+                        Complete
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+
+          <tfoot>
+            <tr className="border-t bg-gray-50 text-gray-900 font-semibold">
+              <td colSpan="8" className="p-3 text-right">
+                Total
+              </td>
+              <td className="p-3 text-center">
+                ${totalCost.toFixed(2)}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+
+      </div>
     </div>
   </div>
 );
