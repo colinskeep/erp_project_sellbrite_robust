@@ -225,10 +225,9 @@ class LoginRequest(BaseModel):
     password: str
 
 @app.post("/login")
-def login(data: LoginRequest):
+def login(data: LoginRequest, conn=Depends(get_db)):
     email = data.email;
     password = data.password;
-    conn = get_db()
 
     user = conn.execute(
         "SELECT * FROM users WHERE email = %s",
