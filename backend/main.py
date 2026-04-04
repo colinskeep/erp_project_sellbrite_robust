@@ -220,9 +220,14 @@ def get_on_order_quantities(conn):
 # ================================
 # LOGIN
 # ================================
+class LoginRequest(BaseModel):
+    email: str
+    password: str
 
 @app.post("/login")
 def login(data: LoginRequest):
+    email = data.email;
+    password = data.password;
     conn = get_db()
 
     user = conn.execute(
