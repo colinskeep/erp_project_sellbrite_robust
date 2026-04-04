@@ -15,7 +15,11 @@ export default function Layout({ children }) {
       <button
         onClick={() => navigate(path)}
         className={`w-full text-left px-3 py-2 rounded-lg transition 
-        ${active ? "bg-white/10 text-white" : "text-gray-400 hover:bg-white/5 hover:text-white"}`}
+        ${
+          active
+            ? "bg-white/20 text-white"
+            : "text-gray-300 hover:bg-white/10 hover:text-white"
+        }`}
       >
         {label}
       </button>
@@ -23,17 +27,17 @@ export default function Layout({ children }) {
   };
 
   return (
-    <div className="flex h-screen bg-[#0f172a] text-white">
+    <div className="flex h-screen bg-gradient-to-br from-slate-800 via-slate-800 to-slate-700 text-gray-100">
       
       {/* Sidebar */}
-      <div className="w-64 bg-white/5 backdrop-blur-xl border-r border-white/10 p-6 flex flex-col">
+      <div className="w-64 bg-slate-700/70 backdrop-blur-xl border-r border-white/10 p-6 flex flex-col">
         
         {/* Logo */}
         <div className="mb-10">
-          <h1 className="text-xl font-semibold tracking-tight">
+          <h1 className="text-xl font-semibold tracking-tight text-white">
             AZFT ERP
           </h1>
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-gray-300 mt-1">
             Inventory Intelligence
           </p>
         </div>
@@ -50,7 +54,7 @@ export default function Layout({ children }) {
         {/* Logout */}
         <button
           onClick={logout}
-          className="text-sm text-red-400 hover:text-red-300 transition"
+          className="text-sm text-rose-400 hover:text-rose-300 transition"
         >
           Logout
         </button>
@@ -60,19 +64,23 @@ export default function Layout({ children }) {
       <div className="flex-1 flex flex-col">
         
         {/* Top Bar */}
-        <div className="h-14 border-b border-white/10 bg-white/5 backdrop-blur-xl flex items-center justify-between px-6">
-          <div className="text-sm text-gray-400">
+        <div className="h-14 border-b border-white/10 bg-white/10 backdrop-blur-xl flex items-center justify-between px-6">
+          <div className="text-sm text-gray-300 capitalize">
             {location.pathname.replace("/", "") || "dashboard"}
           </div>
 
-          <div className="text-sm text-gray-400">
+          <div className="text-sm text-gray-300">
             Logged in
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 p-6 overflow-y-auto bg-gradient-to-br from-[#0f172a] to-[#111827]">
-          <div className="max-w-7xl mx-auto">
+        <div className="flex-1 p-6 overflow-y-auto relative">
+          
+          {/* Glow */}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.18),transparent_65%)] pointer-events-none" />
+
+          <div className="max-w-7xl mx-auto relative">
             {children}
           </div>
         </div>

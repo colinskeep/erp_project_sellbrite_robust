@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import Skeleton from "../components/Skeleton";
 import Spinner from "../components/Spinner";
+
 const API_KEY = process.env.API_KEY;
 const token = localStorage.getItem("token");
 
@@ -16,13 +17,13 @@ export default function Replenishment() {
     setLoading(true);
 
     axios
-      .get("https://erp-project-sellbrite-robust.onrender.com/replenishment", 
-      
-        {
-          headers: { "Authorization": `Bearer ${token}`, "x-api-key": API_KEY },
-          params: vendor ? { vendor } : {},
-        }
-      )
+      .get("https://erp-project-sellbrite-robust.onrender.com/replenishment", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "x-api-key": API_KEY,
+        },
+        params: vendor ? { vendor } : {},
+      })
       .then((res) => {
         const cleaned = res.data.filter(
           (item) => item.sku && item.sku.trim() !== ""
@@ -71,13 +72,19 @@ export default function Replenishment() {
     });
 
     for (const supplier in grouped) {
-      await axios.post("https://erp-project-sellbrite-robust.onrender.com/purchase-orders", {
-        supplier,
-        items: grouped[supplier],
-      }, { headers: {
-        "Authorization": `Bearer ${token}`,
-        "x-api-key": API_KEY
-      }});
+      await axios.post(
+        "https://erp-project-sellbrite-robust.onrender.com/purchase-orders",
+        {
+          supplier,
+          items: grouped[supplier],
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "x-api-key": API_KEY,
+          },
+        }
+      );
     }
 
     alert("Purchase Orders created");
@@ -88,7 +95,7 @@ export default function Replenishment() {
     return (
       <div className="p-6 space-y-4">
         <Spinner />
-        <div className="bg-white p-6 rounded-2xl border">
+        <div className="bg-white/5 backdrop-blur-xl p-6 rounded-2xl border border-white/10">
           {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton key={i} className="h-5 w-full mb-2" />
           ))}
@@ -100,23 +107,22 @@ export default function Replenishment() {
   const actionableItems = data.filter((item) => item.needed > 0);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
 
       {/* 🔷 HEADER */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm flex justify-between items-center">
+      <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/10 p-6 shadow-lg flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-semibold">Replenishment</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-2xl font-semibold text-white">Replenishment</h1>
+          <p className="text-sm text-gray-300 mt-1">
             Identify low-stock items and generate purchase orders
           </p>
         </div>
 
-        {/* Controls */}
         <div className="flex items-center gap-3">
           <select
             value={vendor}
             onChange={(e) => setVendor(e.target.value)}
-            className="border px-3 py-2 rounded-lg text-sm"
+            className="bg-white/10 border border-white/10 text-gray-200 px-3 py-2 rounded-lg text-sm focus:outline-none"
           >
             <option value="">All Vendors</option>
             {vendors
@@ -130,7 +136,7 @@ export default function Replenishment() {
 
           <button
             onClick={createPO}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 transition disabled:opacity-50"
+            className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg text-sm transition shadow-md disabled:opacity-40"
             disabled={selected.length === 0}
           >
             Create PO ({selected.length})
@@ -138,22 +144,27 @@ export default function Replenishment() {
         </div>
       </div>
 
-      {/* 🔷 SUMMARY BAR */}
-      <div className="bg-white border border-gray-200 p-6 shadow-sm rounded-xl flex justify-between text-sm">
-        <div>
-          <span className="text-gray-500">Items needing reorder:</span>{" "}
-          <span className="font-semibold">{actionableItems.length}</span>
+      {/* 🔷 SUMMARY */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-white/10 backdrop-blur-xl border border-white/10 p-5 rounded-xl shadow-md">
+          <p className="text-sm text-gray-300">Items needing reorder</p>
+          <p className="text-2xl font-semibold mt-1 text-white">
+            {actionableItems.length}
+          </p>
         </div>
-        <div>
-          <span className="text-gray-500">Selected:</span>{" "}
-          <span className="font-semibold">{selected.length}</span>
+
+        <div className="bg-white/10 backdrop-blur-xl border border-white/10 p-5 rounded-xl shadow-md">
+          <p className="text-sm text-gray-300">Selected</p>
+          <p className="text-2xl font-semibold mt-1 text-white">
+            {selected.length}
+          </p>
         </div>
       </div>
 
       {/* 🔷 TABLE */}
-      <div className="overflow-x-auto bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+      <div className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-2xl shadow-lg overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+          <thead className="text-xs uppercase text-gray-400 border-b border-white/10">
             <tr>
               <th className="p-3"></th>
               <th className="p-3 text-left">SKU</th>
@@ -172,8 +183,8 @@ export default function Replenishment() {
               return (
                 <tr
                   key={item.sku}
-                  className={`border-t hover:bg-gray-50 ${
-                    isSelected ? "bg-indigo-50" : ""
+                  className={`border-t border-white/5 transition hover:bg-white/5 ${
+                    isSelected ? "bg-indigo-500/20" : ""
                   }`}
                 >
                   <td className="p-3 text-center">
@@ -181,17 +192,23 @@ export default function Replenishment() {
                       type="checkbox"
                       checked={!!isSelected}
                       onChange={() => toggleItem(item)}
+                      className="accent-indigo-500"
                     />
                   </td>
-                  <td className="p-3 font-medium">{item.sku}</td>
-                  <td className="p-3">{item.vendor}</td>
-                  <td className="p-3">{item.title}</td>
 
-                  <td className="p-3 text-center">{item.inventory}</td>
-                  <td className="p-3 text-center">{item.on_order}</td>
+                  <td className="p-3 font-medium text-white">{item.sku}</td>
+                  <td className="p-3 text-gray-300">{item.vendor}</td>
+                  <td className="p-3 text-gray-300">{item.title}</td>
+
+                  <td className="p-3 text-center text-gray-300">
+                    {item.inventory}
+                  </td>
+                  <td className="p-3 text-center text-gray-300">
+                    {item.on_order}
+                  </td>
 
                   <td className="p-3 text-center">
-                    <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded-md font-semibold text-xs">
+                    <span className="px-2 py-1 bg-orange-400/20 text-orange-300 rounded-md font-semibold text-xs">
                       {Math.ceil(item.needed)}
                     </span>
                   </td>
