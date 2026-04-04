@@ -24,8 +24,8 @@ def hash_password(password: str):
 
 def verify_password(plain, hashed):
     print("VERIFYING:", plain, hashed)
-    plain = normalize_password(plain)
-    print(pwd_context.verify(plain, hashed))
+    new_plain = normalize_password(plain)
+    print(pwd_context.verify(new_plain, hashed))
     try:
         print("NORMALIZING PLAIN PASSWORD")
         plain = normalize_password(plain)
