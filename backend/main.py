@@ -24,6 +24,7 @@ from auth import verify_password, hash_password, create_access_token
 def verify_api_key(request: Request):
     print("🔑 Verifying API key...")
     print("Headers:", request.headers)
+    print("API_KEY", os.getenv("API_KEY"))
     api_key = request.headers.get("x-api-key")
     if api_key != os.getenv("API_KEY"):
         raise HTTPException(status_code=401, detail="Unauthorized")
