@@ -98,6 +98,14 @@ export default function Dashboard() {
       </div>
 
       {/* KPI GRID */}
+      <div className="bg-white/5 border border-white/10 rounded-xl p-6 shadow-lg">
+        <h2 className="text-lg font-semibold text-white mb-2">
+          Overview
+        </h2>
+        <p className="text-gray-400 text-sm">
+          Inventory performance summary
+        </p>
+      </div>
       <div className="grid grid-cols-4 gap-6">
         <KPI title="Revenue (90d)" value={formatUSD(totalRevenue)} />
         <KPI title="Estimated Profit" value={formatUSD(profit)} />
