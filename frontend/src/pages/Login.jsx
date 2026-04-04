@@ -38,49 +38,55 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="w-full max-w-md bg-white shadow-xl rounded-2xl p-8">
+    <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#111827] to-[#1f2937] flex items-center justify-center px-4">
+      
+      {/* Glow background effect */}
+      <div className="absolute w-[500px] h-[500px] bg-purple-600/20 blur-3xl rounded-full top-[-100px] left-[-100px]" />
+      <div className="absolute w-[400px] h-[400px] bg-blue-600/20 blur-3xl rounded-full bottom-[-100px] right-[-100px]" />
+
+      {/* Card */}
+      <div className="relative w-full max-w-md backdrop-blur-xl bg-white/5 border border-white/10 shadow-2xl rounded-2xl p-8">
         
-        {/* Logo / Branding */}
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-semibold text-gray-800">
-            Inventory OS
+        {/* Branding */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-semibold text-white tracking-tight">
+            AZFT ERP
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Smart inventory, purchasing & Sellbrite sync
+          <p className="text-sm text-gray-400 mt-2">
+            Real-time inventory, purchasing & Sellbrite automation
           </p>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           
           <div>
-            <label className="text-sm text-gray-600">Email</label>
+            <label className="text-sm text-gray-300">Email</label>
             <input
               type="email"
               placeholder="you@company.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+              className="w-full mt-1 px-4 py-2 bg-white/10 border border-white/10 text-white placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
             />
           </div>
 
           <div>
-            <label className="text-sm text-gray-600">Password</label>
+            <label className="text-sm text-gray-300">Password</label>
             <input
               type="password"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+              className="w-full mt-1 px-4 py-2 bg-white/10 border border-white/10 text-white placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
             />
           </div>
 
           {/* Error */}
           {error && (
-            <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-2">
+            <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg p-2">
               {error}
             </div>
           )}
@@ -89,15 +95,29 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-black text-white py-2 rounded-lg hover:bg-gray-800 transition duration-200 disabled:opacity-50"
+            className="w-full py-2.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium shadow-lg hover:opacity-90 transition disabled:opacity-50"
           >
             {loading ? "Signing in..." : "Sign In"}
           </button>
         </form>
 
+        {/* Divider */}
+        <div className="flex items-center gap-3 my-6">
+          <div className="flex-1 h-px bg-white/10" />
+          <span className="text-xs text-gray-500">Secure Access</span>
+          <div className="flex-1 h-px bg-white/10" />
+        </div>
+
+        {/* Trust / Value Props */}
+        <div className="text-xs text-gray-400 text-center space-y-1">
+          <p>• Live Sellbrite synchronization</p>
+          <p>• Smart purchasing & replenishment</p>
+          <p>• Built for high-volume inventory teams</p>
+        </div>
+
         {/* Footer */}
-        <div className="text-center text-xs text-gray-400 mt-6">
-          © {new Date().getFullYear()} Inventory OS
+        <div className="text-center text-xs text-gray-500 mt-6">
+          © {new Date().getFullYear()} AZFT ERP
         </div>
       </div>
     </div>
