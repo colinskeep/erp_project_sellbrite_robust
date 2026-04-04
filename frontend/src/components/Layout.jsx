@@ -1,63 +1,81 @@
 import { useAuth } from "../context/AuthContext";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export default function Layout({ children }) {
   const { token, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  // 👇 If NOT logged in → render ONLY page (no sidebar)
-  if (!token) {
-    return <>{children}</>;
-  }
+  if (!token) return <>{children}</>;
+
+  const navItem = (path, label) => {
+    const active = location.pathname === path;
+
+    return (
+      <button
+        onClick={() => navigate(path)}
+        className={`w-full text-left px-3 py-2 rounded-lg transition 
+        ${active ? "bg-white/10 text-white" : "text-gray-400 hover:bg-white/5 hover:text-white"}`}
+      >
+        {label}
+      </button>
+    );
+  };
 
   return (
-    <div className="flex h-screen bg-bg text-gray-900">
+    <div className="flex h-screen bg-[#0f172a] text-white">
       
       {/* Sidebar */}
-      <div className="w-64 bg-gray-900 text-white flex flex-col p-6 shadow-xl">
+      <div className="w-64 bg-white/5 backdrop-blur-xl border-r border-white/10 p-6 flex flex-col">
         
-        {/* Branding */}
-        <h1 className="text-2xl font-semibold mb-10 tracking-tight">
-          AZFT ERP
-        </h1>
+        {/* Logo */}
+        <div className="mb-10">
+          <h1 className="text-xl font-semibold tracking-tight">
+            AZFT ERP
+          </h1>
+          <p className="text-xs text-gray-400 mt-1">
+            Inventory Intelligence
+          </p>
+        </div>
 
-        {/* Navigation */}
-        <nav className="flex flex-col gap-1">
-          <button
-            onClick={() => (window.location.href = "/")}
-            className="w-full text-left px-3 py-2 rounded hover:bg-white/10 transition"
-          >
-            Dashboard
-          </button>
-
-          <button
-            onClick={() => (window.location.href = "/replenishment")}
-            className="w-full text-left px-3 py-2 rounded hover:bg-white/10 transition"
-          >
-            Replenishment
-          </button>
-
-          <button
-            onClick={() => (window.location.href = "/purchase-orders")}
-            className="w-full text-left px-3 py-2 rounded hover:bg-white/10 transition"
-          >
-            Purchase Orders
-          </button>
+        {/* Nav */}
+        <nav className="space-y-1">
+          {navItem("/", "Dashboard")}
+          {navItem("/replenishment", "Replenishment")}
+          {navItem("/purchase-orders", "Purchase Orders")}
         </nav>
 
-        {/* Spacer */}
         <div className="flex-1" />
 
         {/* Logout */}
         <button
           onClick={logout}
-          className="w-full text-left px-3 py-2 rounded hover:bg-red-500/20 text-red-400 transition"
+          className="text-sm text-red-400 hover:text-red-300 transition"
         >
           Logout
         </button>
       </div>
 
-      {/* Main content */}
-      <div className="flex-1 p-6 overflow-y-auto">
-        {children}
+      {/* Main Area */}
+      <div className="flex-1 flex flex-col">
+        
+        {/* Top Bar */}
+        <div className="h-14 border-b border-white/10 bg-white/5 backdrop-blur-xl flex items-center justify-between px-6">
+          <div className="text-sm text-gray-400">
+            {location.pathname.replace("/", "") || "dashboard"}
+          </div>
+
+          <div className="text-sm text-gray-400">
+            Logged in
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 p-6 overflow-y-auto bg-gradient-to-br from-[#0f172a] to-[#111827]">
+          <div className="max-w-7xl mx-auto">
+            {children}
+          </div>
+        </div>
       </div>
     </div>
   );
