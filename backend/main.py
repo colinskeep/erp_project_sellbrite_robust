@@ -238,9 +238,6 @@ def login(data: LoginRequest, conn=Depends(get_db)):
     )
     user = cursor.fetchone()
 
-    print("USER FROM DB:", user)
-    print("INPUT PASSWORD:", data.password)
-
     if not user or not verify_password(data.password, user["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
