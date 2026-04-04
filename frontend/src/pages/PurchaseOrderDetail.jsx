@@ -259,7 +259,7 @@ export default function PurchaseOrderDetail() {
 
   const isEditable = po.status === "draft";
 
- // ONLY UI CHANGES — all your logic is untouched
+  // ONLY UI CHANGES — all your logic is untouched
 
 return (
   <div className="space-y-6">
@@ -523,3 +523,4 @@ return (
     </div>
   </div>
 );
+}
