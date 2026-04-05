@@ -276,7 +276,7 @@ def get_dashboard(user=Depends(get_current_user), conn=Depends(get_db)):
         FROM sales
         WHERE DATE(created_at) = :today
     """, {"today": today}).scalar()
-    )
+    
     revenue_today = cur.fetchone()[0] if cur.fetchone() else 0
 
     cur.execute("""
@@ -296,52 +296,58 @@ def get_dashboard(user=Depends(get_current_user), conn=Depends(get_db)):
         FROM sales
         WHERE DATE(created_at) = :today
     """, {"today": today}).scalar()
-
     revenue_today - cur.fetchone()[0] if cur.fetchone() else 0
 
-    revenue_7d = db.execute("""
+    
+    cur.execute("""
         SELECT COALESCE(SUM(revenue), 0)
         FROM sales
         WHERE created_at >= :start
     """, {"start": last_7_days}).scalar()
+    revenue_7d = cur.fetchone()[0] if cur.fetchone() else 0
 
-    revenue_30d = db.execute("""
+    cur.execute("""
         SELECT COALESCE(SUM(revenue), 0)
         FROM sales
         WHERE created_at >= :start
     """, {"start": last_30_days}).scalar()
+    revenue_30d = cur.fetchone()[0] if cur.fetchone() else 0
 
-    avg_order_value = db.execute("""
+    cur.execute("""
         SELECT COALESCE(AVG(revenue), 0)
         FROM sales
         WHERE created_at >= :start
     """, {"start": last_30_days}).scalar()
+    avg_order_value = cur.fetchone()[0] if cur.fetchone() else 0
 
     # 🔹 Sales over last 7 days
-    sales_7d = db.execute("""
+    cur.execute("""
         SELECT DATE(created_at) as date, SUM(revenue) as total
         FROM sales
         WHERE created_at >= :start
         GROUP BY DATE(created_at)
         ORDER BY date
     """, {"start": last_7_days}).fetchall()
+    sales_7d = cur.fetchall() if cur.fetchall() else []
 
     # 🔹 Recent orders
-    recent_orders = db.execute("""
+    cur.execute("""
         SELECT id, created_at as date, revenue
         FROM orders
         ORDER BY created_at DESC
         LIMIT 10
     """).fetchall()
+    recent_orders = cur.fetchall() if cur.fetchall() else []
 
     # 🔹 Top SKUs
-    top_skus = db.execute("""
+    cur.execute("""
         SELECT sku, SUM(quantity) as qty, SUM(quantity * price) as revenue
         FROM order_items
         GROUP BY sku
         ORDER BY qty DESC
         LIMIT 10
     """).fetchall()
+    top_skus = cur.fetchall() if cur.fetchall() else []
 
     return {
         "revenue_today": revenue_today,
