@@ -369,7 +369,7 @@ def get_dashboard(user=Depends(get_current_user), conn=Depends(get_db)):
 def replenishment(vendor: str = Query(None), user=Depends(get_current_user), conn=Depends(get_db)):
     cur = conn.cursor()
 
-    cur.execute("SELECT * FROM sales")
+    cur.execute("SELECT * FROM sales where sales.sku != '' AND sales.sku != 'NaN'")
     sales = cur.fetchall()
 
     cur.execute("SELECT * FROM products")
