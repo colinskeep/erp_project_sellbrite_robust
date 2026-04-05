@@ -160,6 +160,77 @@ export function EmptyState({ title, description }) {
 }
 
 // ===============================
+//  KPI
+// ===============================
+
+export function KPI({ label, value }) {
+  return (
+    <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+      <p className="text-sm text-gray-500">{label}</p>
+      <p className="text-2xl font-semibold text-gray-900 mt-1">
+        ${Number(value || 0).toLocaleString()}
+      </p>
+    </div>
+  );
+}
+
+// ===============================
+//  Sales Chart
+// ===============================
+import {
+  LineChart,
+  Line,
+  XAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+
+export function SalesChart({ data }) {
+  return (
+    <ResponsiveContainer width="100%" height={250}>
+      <LineChart data={data}>
+        <XAxis dataKey="date" />
+        <Tooltip />
+        <Line
+          type="monotone"
+          dataKey="total"
+          stroke="#6366f1"
+          strokeWidth={2}
+        />
+      </LineChart>
+    </ResponsiveContainer>
+  );
+}
+
+// ===============================
+//  Simple Table
+// ===============================
+
+export function SimpleTable({ columns, data, renderRow }) {
+  return (
+    <table className="w-full text-sm">
+      <thead>
+        <tr className="text-gray-500 text-xs uppercase">
+          {columns.map((col, i) => (
+            <th key={i} className="p-2 text-left">
+              {col}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {data.map((row, i) => (
+          <tr key={i} className="border-t">
+            {renderRow(row)}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+
+// ===============================
 // 🔷 USAGE EXAMPLE
 // ===============================
 

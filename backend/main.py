@@ -3,7 +3,7 @@ import psycopg2
 from fastapi import FastAPI, Depends, Header, HTTPException, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from datetime import datetime
+from datetime import datetime, timedelta
 from pydantic import BaseModel
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
 from reportlab.lib import colors
@@ -254,6 +254,107 @@ def login(data: LoginRequest, conn=Depends(get_db)):
     token = create_access_token({"sub": user["email"]})
 
     return {"access_token": token}
+
+# ================================
+# DASHBOARD
+# ================================
+
+
+@app.get("/dashboard", dependencies=[Depends(verify_api_key)])
+def get_dashboard(user=Depends(get_current_user), conn=Depends(get_db)):
+    
+    # 🔹 Date ranges
+    today = datetime.utcnow().date()
+    last_7_days = today - timedelta(days=7)
+    last_30_days = today - timedelta(days=30)
+
+    cur = conn.cursor()
+    # 🔹 Revenue calculations
+    
+    cur.execute("""
+        SELECT COALESCE(SUM(revenue), 0)
+        FROM sales
+        WHERE DATE(created_at) = :today
+    """, {"today": today}).scalar()
+    )
+    revenue_today = cur.fetchone()[0] if cur.fetchone() else 0
+
+    cur.execute("""
+        SELECT products.brand, SUM(sales.revenue) as TOTAL 
+        FROM sales 
+        LEFT JOIN products on sales.sku = products.sku  
+        WHERE products.brand != '' 
+        GROUP BY products.brand
+        ORDER by TOTAL DESC
+        LIMIT 10
+    """)
+    top_vendors = cur.fetchall()
+
+
+    cur.execute("""
+        SELECT COALESCE(SUM(revenue), 0)
+        FROM sales
+        WHERE DATE(created_at) = :today
+    """, {"today": today}).scalar()
+
+    revenue_today - cur.fetchone()[0] if cur.fetchone() else 0
+
+    revenue_7d = db.execute("""
+        SELECT COALESCE(SUM(revenue), 0)
+        FROM sales
+        WHERE created_at >= :start
+    """, {"start": last_7_days}).scalar()
+
+    revenue_30d = db.execute("""
+        SELECT COALESCE(SUM(revenue), 0)
+        FROM sales
+        WHERE created_at >= :start
+    """, {"start": last_30_days}).scalar()
+
+    avg_order_value = db.execute("""
+        SELECT COALESCE(AVG(revenue), 0)
+        FROM sales
+        WHERE created_at >= :start
+    """, {"start": last_30_days}).scalar()
+
+    # 🔹 Sales over last 7 days
+    sales_7d = db.execute("""
+        SELECT DATE(created_at) as date, SUM(revenue) as total
+        FROM sales
+        WHERE created_at >= :start
+        GROUP BY DATE(created_at)
+        ORDER BY date
+    """, {"start": last_7_days}).fetchall()
+
+    # 🔹 Recent orders
+    recent_orders = db.execute("""
+        SELECT id, created_at as date, revenue
+        FROM orders
+        ORDER BY created_at DESC
+        LIMIT 10
+    """).fetchall()
+
+    # 🔹 Top SKUs
+    top_skus = db.execute("""
+        SELECT sku, SUM(quantity) as qty, SUM(quantity * price) as revenue
+        FROM order_items
+        GROUP BY sku
+        ORDER BY qty DESC
+        LIMIT 10
+    """).fetchall()
+
+    return {
+        "revenue_today": revenue_today,
+        "revenue_7d": revenue_7d,
+        "revenue_30d": revenue_30d,
+        "avg_order_value": avg_order_value,
+        "sales_7d": [dict(row) for row in sales_7d],
+        "recent_orders": [dict(row) for row in recent_orders],
+        "top_skus": [dict(row) for row in top_skus],
+        "top_vendors": [dict(row) for row in top_vendors],
+    }
+
+
 
 
 # ================================
