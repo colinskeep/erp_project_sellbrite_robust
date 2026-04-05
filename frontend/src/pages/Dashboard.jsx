@@ -91,7 +91,7 @@ export default function Dashboard() {
             renderRow={(row) => (
               <>
                 <td className="p-2">{row.vendor}</td>
-                <td className="p-2 text-right">${row.spend}</td>
+                <td className="p-2 text-right">${row.spend.toFixed(2)}</td>
               </>
             )}
           />

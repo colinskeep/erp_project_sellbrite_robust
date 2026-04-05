@@ -325,7 +325,7 @@ def get_dashboard(user=Depends(get_current_user), conn=Depends(get_db)):
     cur.execute("""
         SELECT sku, SUM(quantity) AS qty, SUM(quantity * price) AS revenue
         FROM sales
-        WHERE SKU IS NOT NULL AND SKU != ''
+        WHERE SKU IS NOT NULL AND SKU != '' AND SKU != 'NaN'
         GROUP BY sku
         ORDER BY qty DESC
         LIMIT 10
@@ -334,11 +334,12 @@ def get_dashboard(user=Depends(get_current_user), conn=Depends(get_db)):
 
     # 🔹 Top Vendors (by revenue)
     cur.execute("""
-        SELECT 
+                SELECT 
             COALESCE(products.brand, 'Unknown') AS vendor,
             SUM(sales.revenue) AS spend
         FROM sales
         LEFT JOIN products ON sales.sku = products.sku
+        WHERE brand IS NOT NULL AND brand != '' AND brand != 'UNKNOWN'
         GROUP BY products.brand
         ORDER BY spend DESC
         LIMIT 10
