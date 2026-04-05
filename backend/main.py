@@ -263,49 +263,48 @@ def login(data: LoginRequest, conn=Depends(get_db)):
 @app.get("/dashboard", dependencies=[Depends(verify_api_key)])
 def get_dashboard(user=Depends(get_current_user), conn=Depends(get_db)):
 
-    from datetime import datetime, timedelta
-
     today = datetime.utcnow().date()
     last_7_days = today - timedelta(days=7)
     last_30_days = today - timedelta(days=30)
 
-    cur = conn.cursor()
+    # ✅ Use dict cursor
+    cur = conn.cursor(cursor_factory=RealDictCursor)
 
     # 🔹 Revenue Today
     cur.execute("""
-        SELECT COALESCE(SUM(revenue), 0)
+        SELECT COALESCE(SUM(revenue), 0) AS total
         FROM sales
         WHERE DATE(created_at) = %s
     """, (today,))
-    revenue_today = cur.fetchone()[0]
+    revenue_today = cur.fetchone()["total"]
 
-    # 🔹 Revenue 7d
+    # 🔹 Revenue Last 7 Days
     cur.execute("""
-        SELECT COALESCE(SUM(revenue), 0)
+        SELECT COALESCE(SUM(revenue), 0) AS total
         FROM sales
         WHERE created_at >= %s
     """, (last_7_days,))
-    revenue_7d = cur.fetchone()[0]
+    revenue_7d = cur.fetchone()["total"]
 
-    # 🔹 Revenue 30d
+    # 🔹 Revenue Last 30 Days
     cur.execute("""
-        SELECT COALESCE(SUM(revenue), 0)
+        SELECT COALESCE(SUM(revenue), 0) AS total
         FROM sales
         WHERE created_at >= %s
     """, (last_30_days,))
-    revenue_30d = cur.fetchone()[0]
+    revenue_30d = cur.fetchone()["total"]
 
     # 🔹 Avg Order Value
     cur.execute("""
-        SELECT COALESCE(AVG(revenue), 0)
+        SELECT COALESCE(AVG(revenue), 0) AS total
         FROM sales
         WHERE created_at >= %s
     """, (last_30_days,))
-    avg_order_value = cur.fetchone()[0]
+    avg_order_value = cur.fetchone()["total"]
 
-    # 🔹 Sales 7d Chart
+    # 🔹 Sales Over Last 7 Days (Chart)
     cur.execute("""
-        SELECT DATE(created_at) as date, SUM(revenue) as total
+        SELECT DATE(created_at) AS date, SUM(revenue) AS total
         FROM sales
         WHERE created_at >= %s
         GROUP BY DATE(created_at)
@@ -315,7 +314,7 @@ def get_dashboard(user=Depends(get_current_user), conn=Depends(get_db)):
 
     # 🔹 Recent Orders
     cur.execute("""
-        SELECT id, created_at as date, revenue as total
+        SELECT id, created_at AS date, revenue AS total
         FROM orders
         ORDER BY created_at DESC
         LIMIT 10
@@ -324,7 +323,7 @@ def get_dashboard(user=Depends(get_current_user), conn=Depends(get_db)):
 
     # 🔹 Top SKUs
     cur.execute("""
-        SELECT sku, SUM(quantity) as qty, SUM(quantity * price) as revenue
+        SELECT sku, SUM(quantity) AS qty, SUM(quantity * price) AS revenue
         FROM order_items
         GROUP BY sku
         ORDER BY qty DESC
@@ -332,39 +331,29 @@ def get_dashboard(user=Depends(get_current_user), conn=Depends(get_db)):
     """)
     top_skus = cur.fetchall()
 
-    # 🔹 Top Vendors
+    # 🔹 Top Vendors (by revenue)
     cur.execute("""
-        SELECT products.brand as vendor, SUM(sales.revenue) as spend
+        SELECT 
+            COALESCE(products.brand, 'Unknown') AS vendor,
+            SUM(sales.revenue) AS spend
         FROM sales
         LEFT JOIN products ON sales.sku = products.sku
-        WHERE products.brand IS NOT NULL AND products.brand != ''
         GROUP BY products.brand
         ORDER BY spend DESC
         LIMIT 10
     """)
     top_vendors = cur.fetchall()
 
+    # ✅ Final Response (frontend-ready)
     return {
-        "revenue_today": revenue_today,
-        "revenue_7d": revenue_7d,
-        "revenue_30d": revenue_30d,
-        "avg_order_value": avg_order_value,
-        "sales_7d": [
-            {"date": str(row[0]), "total": float(row[1])}
-            for row in sales_7d
-        ],
-        "recent_orders": [
-            {"id": row[0], "date": str(row[1]), "total": float(row[2])}
-            for row in recent_orders
-        ],
-        "top_skus": [
-            {"sku": row[0], "qty": int(row[1]), "revenue": float(row[2])}
-            for row in top_skus
-        ],
-        "top_vendors": [
-            {"vendor": row[0], "spend": float(row[1])}
-            for row in top_vendors
-        ],
+        "revenue_today": float(revenue_today),
+        "revenue_7d": float(revenue_7d),
+        "revenue_30d": float(revenue_30d),
+        "avg_order_value": float(avg_order_value),
+        "sales_7d": sales_7d,
+        "recent_orders": recent_orders,
+        "top_skus": top_skus,
+        "top_vendors": top_vendors,
     }
 
 
