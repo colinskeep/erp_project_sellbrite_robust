@@ -53,7 +53,9 @@ export default function PurchaseOrders() {
 
         setPos(sorted);
 
-        const uniqueVendors = [...new Set(sorted.map((p) => p.supplier))];
+        const uniqueVendors = [
+          ...new Set(sorted.map((p) => p.supplier).filter(Boolean)),
+        ];
         setVendors(uniqueVendors);
       }
     } catch (err) {
@@ -96,6 +98,12 @@ export default function PurchaseOrders() {
     setFiltered(data);
   };
 
+  const getStatusVariant = (status) => {
+    if (status === "submitted") return "info";
+    if (status === "received") return "success";
+    return "default";
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -103,12 +111,6 @@ export default function PurchaseOrders() {
       </div>
     );
   }
-
-  const getStatusVariant = (status) => {
-    if (status === "submitted") return "info";
-    if (status === "received") return "success";
-    return "default";
-  };
 
   return (
     <div className="space-y-8">
@@ -142,13 +144,11 @@ export default function PurchaseOrders() {
           className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
         >
           <option value="">All Vendors</option>
-          {vendors
-            .filter((v) => v)
-            .map((v, i) => (
-              <option key={i} value={v}>
-                {v}
-              </option>
-            ))}
+          {vendors.map((v, i) => (
+            <option key={i} value={v}>
+              {v}
+            </option>
+          ))}
         </select>
 
         <input
@@ -174,22 +174,24 @@ export default function PurchaseOrders() {
           columns={["PO #", "Vendor", "Status", "Total", "Created"]}
           data={filtered}
           renderRow={(po) => {
+            // ✅ FIX: use backend total OR fallback calculation
             const total =
-              po.items?.reduce(
-                (sum, item) =>
-                  sum +
-                  (Number(item.quantity) || 0) *
-                    (Number(item.cost) || 0),
-                0
-              ) || 0;
+              Number(po.total) ||
+              (po.items?.reduce((sum, item) => {
+                const qty = Number(item.quantity) || 0;
+                const cost = Number(item.cost) || 0;
+                return sum + qty * cost;
+              }, 0) || 0);
 
             return (
               <tr
                 key={po.id}
                 onClick={() => navigate(`/purchase-orders/${po.id}`)}
-                className="cursor-pointer hover:bg-gray-50 transition"
+                className="border-t border-gray-200 hover:bg-gray-50 cursor-pointer transition"
               >
-                <td className="p-3 font-medium text-gray-900">#{po.id}</td>
+                <td className="p-3 font-medium text-gray-900">
+                  #{po.id}
+                </td>
 
                 <td className="p-3 text-gray-600">
                   {po.supplier || "—"}

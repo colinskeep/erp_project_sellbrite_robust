@@ -200,7 +200,13 @@ export default function PurchaseOrderDetail() {
               </Button>
             )}
 
-            <Button onClick={() => window.open(`#`)}>
+            <Button
+              onClick={() =>
+                window.open(
+                  `https://erp-project-sellbrite-robust.onrender.com/purchase-orders/${po.id}/download`
+                )
+              }
+            >
               PDF
             </Button>
 
