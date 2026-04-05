@@ -312,6 +312,23 @@ def get_dashboard(user=Depends(get_current_user), conn=Depends(get_db)):
     """, (last_7_days,))
     sales_7d = cur.fetchall()
 
+    # 🔹 Previous 7 Days Revenue
+    prev_7_days = last_7_days - timedelta(days=7)
+
+    cur.execute("""
+        SELECT COALESCE(SUM(revenue), 0) AS total
+        FROM sales
+        WHERE created_at::timestamp >= %s
+        AND created_at::timestamp < %s
+    """, (prev_7_days, last_7_days))
+
+    revenue_prev_7d = cur.fetchone()["total"]
+
+    # 🔹 Trend %
+    revenue_trend_7d = 0
+    if revenue_prev_7d > 0:
+        revenue_trend_7d = ((revenue_7d - revenue_prev_7d) / revenue_prev_7d) * 100
+
     # 🔹 Recent Orders
     cur.execute("""
         SELECT id, created_at AS date, revenue AS total
@@ -356,6 +373,7 @@ def get_dashboard(user=Depends(get_current_user), conn=Depends(get_db)):
         "recent_orders": recent_orders,
         "top_skus": top_skus,
         "top_vendors": top_vendors,
+        "revenue_trend_7d": revenue_trend_7d
     }
 
 

@@ -45,7 +45,7 @@ export default function Dashboard() {
       <Section title="Overview">
         <div className="grid grid-cols-4 gap-6">
           <KPI label="Today" value={data.revenue_today} />
-          <KPI label="Last 7 Days" value={data.revenue_7d} />
+          <KPI label="Last 7 Days" value={data.revenue_7d} trend={data.revenue_trend_7d} />
           <KPI label="Last 30 Days" value={data.revenue_30d} />
           <KPI label="Avg Order" value={data.avg_order_value} />
         </div>

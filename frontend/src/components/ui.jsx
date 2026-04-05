@@ -163,13 +163,26 @@ export function EmptyState({ title, description }) {
 //  KPI
 // ===============================
 
-export function KPI({ label, value }) {
+export default function KpiCard({ title, value, trend }) {
+  const isUp = trend >= 0;
+
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-      <p className="text-sm text-gray-500">{label}</p>
-      <p className="text-2xl font-semibold text-gray-900 mt-1">
-        ${Number(value || 0).toLocaleString()}
-      </p>
+    <div className="bg-white rounded-xl shadow p-4">
+      <div className="text-sm text-gray-500">{title}</div>
+
+      <div className="text-2xl font-semibold mt-1">
+        ${value.toLocaleString()}
+      </div>
+
+      {trend !== undefined && (
+        <div
+          className={`text-sm mt-2 ${
+            isUp ? "text-green-500" : "text-red-500"
+          }`}
+        >
+          {isUp ? "↑" : "↓"} {Math.abs(trend).toFixed(1)}%
+        </div>
+      )}
     </div>
   );
 }
