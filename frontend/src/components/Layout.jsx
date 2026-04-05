@@ -14,11 +14,11 @@ export default function Layout({ children }) {
     return (
       <button
         onClick={() => navigate(path)}
-        className={`w-full text-left px-3 py-2 rounded-lg transition 
+        className={`w-full text-left px-3 py-2 rounded-lg text-sm transition
         ${
           active
-            ? "bg-white/20 text-white"
-            : "text-gray-300 hover:bg-white/10 hover:text-white"
+            ? "bg-blue-50 text-blue-600 font-medium"
+            : "text-gray-600 hover:bg-gray-100"
         }`}
       >
         {label}
@@ -27,17 +27,17 @@ export default function Layout({ children }) {
   };
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-slate-800 via-slate-800 to-slate-700 text-gray-100">
+    <div className="flex h-screen bg-white text-gray-900">
       
-      {/* Sidebar */}
-      <div className="w-64 bg-slate-700/70 backdrop-blur-xl border-r border-white/10 p-6 flex flex-col">
+      {/* 🔷 SIDEBAR */}
+      <div className="w-64 border-r border-gray-200 bg-white flex flex-col p-6">
         
         {/* Logo */}
         <div className="mb-10">
-          <h1 className="text-xl font-semibold tracking-tight text-white">
+          <h1 className="text-lg font-semibold tracking-tight text-gray-900">
             AZFT ERP
           </h1>
-          <p className="text-xs text-gray-300 mt-1">
+          <p className="text-xs text-gray-500 mt-1">
             Inventory Intelligence
           </p>
         </div>
@@ -54,33 +54,29 @@ export default function Layout({ children }) {
         {/* Logout */}
         <button
           onClick={logout}
-          className="text-sm text-rose-400 hover:text-rose-300 transition"
+          className="text-sm text-red-500 hover:text-red-600 transition"
         >
           Logout
         </button>
       </div>
 
-      {/* Main Area */}
-      <div className="flex-1 flex flex-col">
+      {/* 🔷 MAIN */}
+      <div className="flex-1 flex flex-col bg-gradient-to-b from-blue-50/40 to-white">
         
         {/* Top Bar */}
-        <div className="h-14 border-b border-white/10 bg-white/10 backdrop-blur-xl flex items-center justify-between px-6">
-          <div className="text-sm text-gray-300 capitalize">
+        <div className="h-14 border-b border-gray-200 bg-white/70 backdrop-blur flex items-center justify-between px-6">
+          <div className="text-sm text-gray-500 capitalize">
             {location.pathname.replace("/", "") || "dashboard"}
           </div>
 
-          <div className="text-sm text-gray-300">
+          <div className="text-sm text-gray-500">
             Logged in
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 p-6 overflow-y-auto relative">
-          
-          {/* Glow */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.18),transparent_65%)] pointer-events-none" />
-
-          <div className="max-w-7xl mx-auto relative">
+        <div className="flex-1 p-6 overflow-y-auto">
+          <div className="max-w-7xl mx-auto">
             {children}
           </div>
         </div>

@@ -2,6 +2,13 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Spinner from "../components/Spinner";
+import {
+  Card,
+  Button,
+  Section,
+  Table,
+  Badge,
+} from "../components/ui";
 
 const API_KEY = process.env.API_KEY;
 const token = localStorage.getItem("token");
@@ -97,49 +104,42 @@ export default function PurchaseOrders() {
     );
   }
 
-  const statusColors = {
-    draft: "bg-white/10 text-gray-300",
-    submitted: "bg-blue-500/20 text-blue-300",
-    received: "bg-green-500/20 text-green-300",
+  const getStatusVariant = (status) => {
+    if (status === "submitted") return "info";
+    if (status === "received") return "success";
+    return "default";
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* HEADER */}
+      <Section
+        title="Purchase Orders"
+        right={
+          <Button onClick={() => navigate("/replenishment")}>
+            + Create PO
+          </Button>
+        }
+      >
+        <p className="text-sm text-gray-500">
+          Manage and track all purchase orders
+        </p>
+      </Section>
 
-      {/* 🔷 HEADER */}
-      <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/10 p-6 shadow-lg flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-semibold text-white">
-            Purchase Orders
-          </h1>
-          <p className="text-sm text-gray-300 mt-1">
-            Manage and track all purchase orders
-          </p>
-        </div>
-
-        <button
-          onClick={() => navigate("/replenishment")}
-          className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg text-sm transition shadow-md"
-        >
-          + Create PO
-        </button>
-      </div>
-
-      {/* 🔷 FILTER BAR */}
-      <div className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-xl p-4 flex flex-wrap gap-3 items-center shadow-md">
-
+      {/* FILTERS */}
+      <Card className="p-4 flex flex-wrap gap-3 items-center">
         <input
           type="text"
           placeholder="Search PO # or Vendor..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="bg-white/10 border border-white/10 text-gray-200 px-3 py-2 rounded-lg text-sm w-64 focus:outline-none"
+          className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-64"
         />
 
         <select
           value={vendor}
           onChange={(e) => setVendor(e.target.value)}
-          className="bg-white/10 border border-white/10 text-gray-200 px-3 py-2 rounded-lg text-sm focus:outline-none"
+          className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
         >
           <option value="">All Vendors</option>
           {vendors
@@ -155,95 +155,71 @@ export default function PurchaseOrders() {
           type="date"
           value={startDate}
           onChange={(e) => setStartDate(e.target.value)}
-          className="bg-white/10 border border-white/10 text-gray-200 px-3 py-2 rounded-lg text-sm"
+          className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
         />
 
-        <span className="text-gray-400">to</span>
+        <span className="text-gray-500">to</span>
 
         <input
           type="date"
           value={endDate}
           onChange={(e) => setEndDate(e.target.value)}
-          className="bg-white/10 border border-white/10 text-gray-200 px-3 py-2 rounded-lg text-sm"
+          className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
         />
-      </div>
+      </Card>
 
-      {/* 🔷 TABLE */}
-      <div className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-2xl shadow-lg overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="text-xs uppercase text-gray-400 border-b border-white/10">
-            <tr>
-              <th className="p-3 text-left">PO #</th>
-              <th className="p-3 text-left">Vendor</th>
-              <th className="p-3 text-center">Status</th>
-              <th className="p-3 text-right">Total</th>
-              <th className="p-3 text-right">Created</th>
-            </tr>
-          </thead>
+      {/* TABLE */}
+      <Section title="All Purchase Orders">
+        <Table
+          columns={["PO #", "Vendor", "Status", "Total", "Created"]}
+          data={filtered}
+          renderRow={(po) => {
+            const total =
+              po.items?.reduce(
+                (sum, item) =>
+                  sum +
+                  (Number(item.quantity) || 0) *
+                    (Number(item.cost) || 0),
+                0
+              ) || 0;
 
-          <tbody>
-            {filtered.length > 0 ? (
-              filtered.map((po) => {
-                const total =
-                  po.items?.reduce(
-                    (sum, item) =>
-                      sum +
-                      (Number(item.quantity) || 0) *
-                        (Number(item.cost) || 0),
-                    0
-                  ) || 0;
+            return (
+              <tr
+                key={po.id}
+                onClick={() => navigate(`/purchase-orders/${po.id}`)}
+                className="cursor-pointer hover:bg-gray-50 transition"
+              >
+                <td className="p-3 font-medium text-gray-900">#{po.id}</td>
 
-                return (
-                  <tr
-                    key={po.id}
-                    onClick={() =>
-                      navigate(`/purchase-orders/${po.id}`)
-                    }
-                    className="border-t border-white/5 hover:bg-white/5 transition cursor-pointer"
-                  >
-                    <td className="p-3 font-medium text-white">
-                      #{po.id}
-                    </td>
+                <td className="p-3 text-gray-600">
+                  {po.supplier || "—"}
+                </td>
 
-                    <td className="p-3 text-gray-300">
-                      {po.supplier || "—"}
-                    </td>
+                <td className="p-3 text-center">
+                  <Badge variant={getStatusVariant(po.status)}>
+                    {po.status?.toUpperCase()}
+                  </Badge>
+                </td>
 
-                    <td className="p-3 text-center">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          statusColors[po.status] || "bg-white/10"
-                        }`}
-                      >
-                        {po.status?.toUpperCase()}
-                      </span>
-                    </td>
+                <td className="p-3 text-right font-medium text-gray-900">
+                  ${total.toFixed(2)}
+                </td>
 
-                    <td className="p-3 text-right font-medium text-white">
-                      ${Number(po.total || 0).toFixed(2)}
-                    </td>
-
-                    <td className="p-3 text-right text-gray-400 text-xs">
-                      {po.created_at
-                        ? new Date(po.created_at).toLocaleDateString()
-                        : "—"}
-                    </td>
-                  </tr>
-                );
-              })
-            ) : (
-              <tr>
-                <td
-                  colSpan="5"
-                  className="p-10 text-center text-gray-400"
-                >
-                  No matching purchase orders
+                <td className="p-3 text-right text-gray-500 text-xs">
+                  {po.created_at
+                    ? new Date(po.created_at).toLocaleDateString()
+                    : "—"}
                 </td>
               </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            );
+          }}
+          emptyState={
+            <div className="text-center text-gray-500 py-10">
+              No matching purchase orders
+            </div>
+          }
+        />
+      </Section>
     </div>
   );
 }
