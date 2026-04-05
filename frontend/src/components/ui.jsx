@@ -105,7 +105,7 @@ export function Badge({ children, variant = "default" }) {
 // ===============================
 // 🔷 TABLE
 // ===============================
-export function Table({ columns, data, renderRow }) {
+export function Table({ columns, data, renderRow, emptyState, rowProps }) {
   return (
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
       <table className="w-full text-sm">
