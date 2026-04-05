@@ -174,7 +174,6 @@ export default function PurchaseOrders() {
           columns={["PO #", "Vendor", "Status", "Total", "Created"]}
           data={filtered}
           renderRow={(po) => {
-            // ✅ FIX: use backend total OR fallback calculation
             const total =
               Number(po.total) ||
               (po.items?.reduce((sum, item) => {
@@ -184,11 +183,7 @@ export default function PurchaseOrders() {
               }, 0) || 0);
 
             return (
-              <tr
-                key={po.id}
-                onClick={() => navigate(`/purchase-orders/${po.id}`)}
-                className="border-t border-gray-200 hover:bg-gray-50 cursor-pointer transition"
-              >
+              <>
                 <td className="p-3 font-medium text-gray-900">
                   #{po.id}
                 </td>
@@ -212,7 +207,7 @@ export default function PurchaseOrders() {
                     ? new Date(po.created_at).toLocaleDateString()
                     : "—"}
                 </td>
-              </tr>
+              </>
             );
           }}
           emptyState={
