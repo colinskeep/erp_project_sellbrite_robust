@@ -173,6 +173,11 @@ export default function PurchaseOrders() {
         <Table
           columns={["PO #", "Vendor", "Status", "Total", "Created"]}
           data={filtered}
+          rowProps={(po) => ({
+            onClick: () => navigate(`/purchase-orders/${po.id}`),
+            className:
+              "cursor-pointer hover:bg-gray-50 transition border-t border-gray-200",
+            })}
           renderRow={(po) => {
             const total =
               Number(po.total) ||
