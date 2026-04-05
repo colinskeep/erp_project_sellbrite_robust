@@ -120,11 +120,14 @@ export function Table({ columns, data, renderRow }) {
         </thead>
 
         <tbody>
-          {data.map((row, i) => (
-            <tr key={i} className="border-t border-gray-200 hover:bg-gray-50">
-              {renderRow(row)}
+        {data.map((row, i) => (
+            <tr
+            key={row.id || i}
+            {...(rowProps ? rowProps(row) : {})}
+            >
+            {renderRow(row)}
             </tr>
-          ))}
+        ))}
         </tbody>
       </table>
     </div>
