@@ -74,7 +74,7 @@ export default function Dashboard() {
               <>
                 <td className="p-2">{row.sku}</td>
                 <td className="p-2 text-right">{row.qty}</td>
-                <td className="p-2 text-right">${row.revenue}</td>
+                <td className="p-2 text-right">${row.revenue.toFixed(2)}</td>
               </>
             )}
           />

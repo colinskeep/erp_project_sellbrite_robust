@@ -325,6 +325,7 @@ def get_dashboard(user=Depends(get_current_user), conn=Depends(get_db)):
     cur.execute("""
         SELECT sku, SUM(quantity) AS qty, SUM(quantity * price) AS revenue
         FROM sales
+        WHERE SKU IS NOT NULL AND SKU != ''
         GROUP BY sku
         ORDER BY qty DESC
         LIMIT 10
