@@ -315,7 +315,7 @@ def get_dashboard(user=Depends(get_current_user), conn=Depends(get_db)):
     # 🔹 Recent Orders
     cur.execute("""
         SELECT id, created_at AS date, revenue AS total
-        FROM orders
+        FROM sales
         ORDER BY created_at DESC
         LIMIT 10
     """)
@@ -324,7 +324,7 @@ def get_dashboard(user=Depends(get_current_user), conn=Depends(get_db)):
     # 🔹 Top SKUs
     cur.execute("""
         SELECT sku, SUM(quantity) AS qty, SUM(quantity * price) AS revenue
-        FROM order_items
+        FROM sales
         GROUP BY sku
         ORDER BY qty DESC
         LIMIT 10
