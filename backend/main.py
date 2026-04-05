@@ -262,82 +262,65 @@ def login(data: LoginRequest, conn=Depends(get_db)):
 
 @app.get("/dashboard", dependencies=[Depends(verify_api_key)])
 def get_dashboard(user=Depends(get_current_user), conn=Depends(get_db)):
-    
-    # 🔹 Date ranges
+
+    from datetime import datetime, timedelta
+
     today = datetime.utcnow().date()
     last_7_days = today - timedelta(days=7)
     last_30_days = today - timedelta(days=30)
 
     cur = conn.cursor()
-    # 🔹 Revenue calculations
-    
+
+    # 🔹 Revenue Today
     cur.execute("""
         SELECT COALESCE(SUM(revenue), 0)
         FROM sales
-        WHERE DATE(created_at) = :today
-    """, {"today": today}).scalar()
-    
-    revenue_today = cur.fetchone()[0] if cur.fetchone() else 0
+        WHERE DATE(created_at) = %s
+    """, (today,))
+    revenue_today = cur.fetchone()[0]
 
-    cur.execute("""
-        SELECT products.brand, SUM(sales.revenue) as TOTAL 
-        FROM sales 
-        LEFT JOIN products on sales.sku = products.sku  
-        WHERE products.brand != '' 
-        GROUP BY products.brand
-        ORDER by TOTAL DESC
-        LIMIT 10
-    """)
-    top_vendors = cur.fetchall()
-
-
+    # 🔹 Revenue 7d
     cur.execute("""
         SELECT COALESCE(SUM(revenue), 0)
         FROM sales
-        WHERE DATE(created_at) = :today
-    """, {"today": today}).scalar()
-    revenue_today - cur.fetchone()[0] if cur.fetchone() else 0
+        WHERE created_at >= %s
+    """, (last_7_days,))
+    revenue_7d = cur.fetchone()[0]
 
-    
+    # 🔹 Revenue 30d
     cur.execute("""
         SELECT COALESCE(SUM(revenue), 0)
         FROM sales
-        WHERE created_at >= :start
-    """, {"start": last_7_days}).scalar()
-    revenue_7d = cur.fetchone()[0] if cur.fetchone() else 0
+        WHERE created_at >= %s
+    """, (last_30_days,))
+    revenue_30d = cur.fetchone()[0]
 
-    cur.execute("""
-        SELECT COALESCE(SUM(revenue), 0)
-        FROM sales
-        WHERE created_at >= :start
-    """, {"start": last_30_days}).scalar()
-    revenue_30d = cur.fetchone()[0] if cur.fetchone() else 0
-
+    # 🔹 Avg Order Value
     cur.execute("""
         SELECT COALESCE(AVG(revenue), 0)
         FROM sales
-        WHERE created_at >= :start
-    """, {"start": last_30_days}).scalar()
-    avg_order_value = cur.fetchone()[0] if cur.fetchone() else 0
+        WHERE created_at >= %s
+    """, (last_30_days,))
+    avg_order_value = cur.fetchone()[0]
 
-    # 🔹 Sales over last 7 days
+    # 🔹 Sales 7d Chart
     cur.execute("""
         SELECT DATE(created_at) as date, SUM(revenue) as total
         FROM sales
-        WHERE created_at >= :start
+        WHERE created_at >= %s
         GROUP BY DATE(created_at)
         ORDER BY date
-    """, {"start": last_7_days}).fetchall()
-    sales_7d = cur.fetchall() if cur.fetchall() else []
+    """, (last_7_days,))
+    sales_7d = cur.fetchall()
 
-    # 🔹 Recent orders
+    # 🔹 Recent Orders
     cur.execute("""
-        SELECT id, created_at as date, revenue
+        SELECT id, created_at as date, revenue as total
         FROM orders
         ORDER BY created_at DESC
         LIMIT 10
-    """).fetchall()
-    recent_orders = cur.fetchall() if cur.fetchall() else []
+    """)
+    recent_orders = cur.fetchall()
 
     # 🔹 Top SKUs
     cur.execute("""
@@ -346,18 +329,42 @@ def get_dashboard(user=Depends(get_current_user), conn=Depends(get_db)):
         GROUP BY sku
         ORDER BY qty DESC
         LIMIT 10
-    """).fetchall()
-    top_skus = cur.fetchall() if cur.fetchall() else []
+    """)
+    top_skus = cur.fetchall()
+
+    # 🔹 Top Vendors
+    cur.execute("""
+        SELECT products.brand as vendor, SUM(sales.revenue) as spend
+        FROM sales
+        LEFT JOIN products ON sales.sku = products.sku
+        WHERE products.brand IS NOT NULL AND products.brand != ''
+        GROUP BY products.brand
+        ORDER BY spend DESC
+        LIMIT 10
+    """)
+    top_vendors = cur.fetchall()
 
     return {
         "revenue_today": revenue_today,
         "revenue_7d": revenue_7d,
         "revenue_30d": revenue_30d,
         "avg_order_value": avg_order_value,
-        "sales_7d": [dict(row) for row in sales_7d],
-        "recent_orders": [dict(row) for row in recent_orders],
-        "top_skus": [dict(row) for row in top_skus],
-        "top_vendors": [dict(row) for row in top_vendors],
+        "sales_7d": [
+            {"date": str(row[0]), "total": float(row[1])}
+            for row in sales_7d
+        ],
+        "recent_orders": [
+            {"id": row[0], "date": str(row[1]), "total": float(row[2])}
+            for row in recent_orders
+        ],
+        "top_skus": [
+            {"sku": row[0], "qty": int(row[1]), "revenue": float(row[2])}
+            for row in top_skus
+        ],
+        "top_vendors": [
+            {"vendor": row[0], "spend": float(row[1])}
+            for row in top_vendors
+        ],
     }
 
 
