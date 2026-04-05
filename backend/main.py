@@ -274,7 +274,7 @@ def get_dashboard(user=Depends(get_current_user), conn=Depends(get_db)):
     cur.execute("""
         SELECT COALESCE(SUM(revenue), 0) AS total
         FROM sales
-        WHERE DATE(created_at) = %s
+        WHERE DATE(created_at::timestamp) = %s
     """, (today,))
     revenue_today = cur.fetchone()["total"]
 
@@ -282,7 +282,7 @@ def get_dashboard(user=Depends(get_current_user), conn=Depends(get_db)):
     cur.execute("""
         SELECT COALESCE(SUM(revenue), 0) AS total
         FROM sales
-        WHERE created_at >= %s
+        WHERE WHERE created_at::timestamp >= %s
     """, (last_7_days,))
     revenue_7d = cur.fetchone()["total"]
 
@@ -290,7 +290,7 @@ def get_dashboard(user=Depends(get_current_user), conn=Depends(get_db)):
     cur.execute("""
         SELECT COALESCE(SUM(revenue), 0) AS total
         FROM sales
-        WHERE created_at >= %s
+        WHERE WHERE created_at::timestamp >= %s
     """, (last_30_days,))
     revenue_30d = cur.fetchone()["total"]
 
@@ -298,7 +298,7 @@ def get_dashboard(user=Depends(get_current_user), conn=Depends(get_db)):
     cur.execute("""
         SELECT COALESCE(AVG(revenue), 0) AS total
         FROM sales
-        WHERE created_at >= %s
+        WHERE WHERE created_at::timestamp >= %s
     """, (last_30_days,))
     avg_order_value = cur.fetchone()["total"]
 
@@ -306,7 +306,7 @@ def get_dashboard(user=Depends(get_current_user), conn=Depends(get_db)):
     cur.execute("""
         SELECT DATE(created_at) AS date, SUM(revenue) AS total
         FROM sales
-        WHERE created_at >= %s
+        WHERE WHERE created_at::timestamp >= %s
         GROUP BY DATE(created_at)
         ORDER BY date
     """, (last_7_days,))
